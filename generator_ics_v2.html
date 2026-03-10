@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IHK – Generátor ICS</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #102A5A;
+      --navy-light: #1a3a7a;
+      --accent: #3B82F6;
+      --accent-soft: #EFF6FF;
+      --red: #C0392B;
+      --red-soft: #FEF2F2;
+      --green: #065f46;
+      --green-soft: #ECFDF5;
+      --gray-50: #F8FAFC;
+      --gray-100: #F1F5F9;
+      --gray-200: #E2E8F0;
+      --gray-300: #CBD5E1;
+      --gray-500: #64748B;
+      --gray-700: #334155;
+      --gray-900: #0F172A;
+      --white: #ffffff;
+      --radius: 14px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
+      --shadow-lg: 0 8px 32px rgba(16,42,90,.12);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(145deg, #EEF4FF 0%, #F8FAFC 50%, #F0F7FF 100%);
+      min-height: 100vh;
+      color: var(--gray-900);
+      padding: 32px 24px 64px;
+    }
+
+    /* HEADER */
+    .header {
+      max-width: 860px;
+      margin: 0 auto 36px;
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+    }
+    .header-icon {
+      width: 52px; height: 52px; flex-shrink: 0;
+      background: var(--navy);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      box-shadow: var(--shadow-lg);
+    }
+    .header-text h1 {
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--navy);
+      letter-spacing: -.02em;
+    }
+    .header-text p {
+      margin-top: 4px;
+      color: var(--gray-500);
+      font-size: .88rem;
+      line-height: 1.5;
+    }
+    .badge {
+      display: inline-block;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid #BFDBFE;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: .8rem;
+      font-weight: 500;
+      margin: 0 2px;
+    }
+
+    /* STEP CARD */
+    .wrapper { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+    .card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      box-shadow: var(--shadow);
+      transition: box-shadow .2s;
+    }
+    .card:hover { box-shadow: var(--shadow-lg); }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .step-num {
+      width: 28px; height: 28px; flex-shrink: 0;
+      background: var(--navy);
+      color: white;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem;
+      font-weight: 600;
+    }
+    .step-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--gray-900);
+    }
+    .step-desc {
+      font-size: .83rem;
+      color: var(--gray-500);
+      margin-left: 42px;
+      margin-top: -10px;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    /* FORM CONTROLS */
+    .row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: .82rem; font-weight: 600; color: var(--gray-700); letter-spacing: .02em; text-transform: uppercase; }
+
+    input[type="file"] {
+      font-family: 'DM Sans', sans-serif;
+      font-size: .88rem;
+      color: var(--gray-700);
+      padding: 10px 14px;
+      border: 2px dashed var(--gray-300);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      background: var(--gray-50);
+      transition: border-color .2s, background .2s;
+    }
+    input[type="file"]:hover { border-color: var(--accent); background: var(--accent-soft); }
+
+    input[type="month"], input[type="text"], select {
+      font-family: 'DM Mono', monospace;
+      font-size: .88rem;
+      padding: 10px 14px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      background: var(--gray-50);
+      color: var(--gray-900);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      min-width: 160px;
+    }
+    input[type="month"]:focus, input[type="text"]:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+      background: white;
+    }
+
+    /* BUTTONS */
+    .btn {
+      font-family: 'DM Sans', sans-serif;
+      font-size: .88rem;
+      font-weight: 500;
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 7px;
+      transition: all .15s;
+    }
+    .btn-primary {
+      background: var(--navy);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--navy-light); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16,42,90,.3); }
+
+    .btn-secondary {
+      background: var(--gray-100);
+      color: var(--gray-700);
+      border: 1px solid var(--gray-200);
+    }
+    .btn-secondary:hover { background: var(--gray-200); }
+
+    .btn-accent {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-accent:hover { background: #2563EB; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59,130,246,.3); }
+
+    .btn-small {
+      padding: 6px 12px;
+      font-size: .8rem;
+    }
+
+    /* MAP TABLE */
+    .map-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    .map-table th {
+      background: var(--gray-50);
+      color: var(--gray-500);
+      text-transform: uppercase;
+      font-size: .75rem;
+      letter-spacing: .05em;
+      font-weight: 600;
+      padding: 10px 14px;
+      border-bottom: 2px solid var(--gray-200);
+      text-align: left;
+    }
+    .map-table td { padding: 8px 14px; border-bottom: 1px solid var(--gray-100); }
+    .map-table input {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 6px;
+      font-family: 'DM Mono', monospace;
+      font-size: .85rem;
+      background: var(--gray-50);
+      color: var(--gray-900);
+    }
+    .map-table input:focus { outline: none; border-color: var(--accent); background: white; }
+    .del-btn {
+      background: none;
+      border: none;
+      color: var(--gray-500);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: background .15s, color .15s;
+    }
+    .del-btn:hover { background: var(--red-soft); color: var(--red); }
+
+    /* TOGGLE */
+    .toggle-wrap { display: flex; align-items: center; gap: 10px; }
+    .toggle-label { font-size: .88rem; color: var(--gray-700); font-weight: 500; }
+    .toggle {
+      position: relative; width: 42px; height: 24px;
+      display: inline-block;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--gray-300);
+      border-radius: 999px;
+      transition: .2s;
+    }
+    .slider:before {
+      content: '';
+      position: absolute;
+      height: 18px; width: 18px;
+      left: 3px; bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: .2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+    .toggle input:checked + .slider { background: var(--navy); }
+    .toggle input:checked + .slider:before { transform: translateX(18px); }
+
+    /* PREVIEW */
+    #preview-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--gray-200);
+    }
+    .preview-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    .preview-table th {
+      background: var(--navy);
+      color: rgba(255,255,255,.85);
+      text-transform: uppercase;
+      font-size: .72rem;
+      letter-spacing: .06em;
+      font-weight: 600;
+      padding: 10px 14px;
+      text-align: left;
+      position: sticky; top: 0;
+    }
+    .preview-table td { padding: 9px 14px; border-bottom: 1px solid var(--gray-100); }
+    .preview-table tr:nth-child(odd) td { background: var(--white); }
+    .preview-table tr:nth-child(even) td { background: var(--gray-50); }
+    .preview-table tr:last-child td { border-bottom: none; }
+    .preview-table tr:hover td { background: var(--accent-soft); }
+
+    /* STATUS */
+    #status {
+      font-size: .85rem;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      margin-top: 12px;
+    }
+    #status.idle { background: var(--gray-50); color: var(--gray-500); border: 1px solid var(--gray-200); }
+    #status.ok { background: var(--green-soft); color: var(--green); border: 1px solid #A7F3D0; }
+    #status.err { background: var(--red-soft); color: var(--red); border: 1px solid #FECACA; }
+
+    /* DIVIDER */
+    .divider { height: 1px; background: var(--gray-100); margin: 18px 0; }
+
+    /* ACTION BAR */
+    .action-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .action-group { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+    /* FILE DROP ZONE */
+    .drop-zone {
+      border: 2px dashed var(--gray-300);
+      border-radius: var(--radius-sm);
+      padding: 28px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .2s;
+      background: var(--gray-50);
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.over { border-color: var(--accent); background: var(--accent-soft); }
+    .drop-zone.loaded { border-color: #6EE7B7; background: var(--green-soft); border-style: solid; }
+    .drop-icon { font-size: 2rem; display: block; margin-bottom: 8px; }
+    .drop-text { font-size: .88rem; color: var(--gray-500); }
+    .drop-text strong { color: var(--accent); }
+    .drop-name { font-family: 'DM Mono', monospace; font-size: .85rem; color: var(--green); font-weight: 500; margin-top: 4px; }
+    #file { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+    /* EMPTY STATE */
+    .empty { text-align: center; padding: 40px 24px; color: var(--gray-500); font-size: .9rem; }
+    .empty-icon { font-size: 2.5rem; display: block; margin-bottom: 8px; opacity: .4; }
+
+    /* HOLIDAY TAGS */
+    .holiday-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--accent-soft);
+      border: 1px solid #BFDBFE;
+      color: var(--navy);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: .8rem;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .holiday-tag .day-num {
+      font-family: 'DM Mono', monospace;
+      font-weight: 600;
+      font-size: .82rem;
+      background: var(--navy);
+      color: white;
+      padding: 1px 6px;
+      border-radius: 999px;
+    }
+    .holiday-tag.weekend-only {
+      background: var(--gray-100);
+      border-color: var(--gray-200);
+      color: var(--gray-500);
+      text-decoration: line-through;
+      opacity: .7;
+    }
+
+    /* MONTH BADGE */
+    .next-month-hint {
+      font-size: .78rem;
+      color: var(--accent);
+      font-weight: 500;
+      background: var(--accent-soft);
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-left: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">📅</div>
+  <div class="header-text">
+    <h1>IHK – Generátor ICS</h1>
+    <p>Převede Excel s rozpisem služeb na kalendářní .ics soubory. Každá služba = jedna událost v <span class="badge">08:00–08:30</span>. Víkendy/svátky: <span class="badge">24h</span>.</p>
+  </div>
+</div>
+
+<div class="wrapper">
+
+  <!-- KROK 1: Nahrání souboru -->
+  <div class="card">
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <div class="step-title">Nahrání Excel souboru</div>
+    </div>
+    <p class="step-desc">Soubor se strukturou: <em>Datum</em> | <em>Den v týdnu</em> | <em>Směna A odpol.</em> | <em>Směna A noční</em> | <em>Směna B odpol.</em> | <em>Směna B noční</em></p>
+
+    <div class="row" style="align-items: flex-start; gap: 20px; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 220px;">
+        <div class="drop-zone" id="dropZone">
+          <input id="file" type="file" accept=".xlsx,.xls" />
+          <span class="drop-icon">📂</span>
+          <div class="drop-text"><strong>Klikněte</strong> nebo přetáhněte soubor sem</div>
+          <div class="drop-name" id="fileName"></div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="field">
+          <label>Měsíc / Rok <span class="next-month-hint" id="nextMonthLabel"></span></label>
+          <input id="month" type="month" />
+        </div>
+        <div class="field">
+          <label>Časová zóna</label>
+          <select id="tz">
+            <option value="Europe/Prague" selected>Europe/Prague</option>
+            <option value="UTC">UTC</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KROK 2: Mapa jmen -->
+  <div class="card">
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div class="step-title">Mapa jmen → název události</div>
+    </div>
+    <p class="step-desc">Do SUMMARY se přidá přípona <span class="badge">odpol.</span> <span class="badge">noční</span> nebo <span class="badge">24h</span></p>
+
+    <table class="map-table" id="mapTable">
+      <thead><tr><th>Jméno v tabulce</th><th>SUMMARY (základ)</th><th style="width:48px"></th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div style="margin-top: 12px;">
+      <button class="btn btn-secondary btn-small" id="addMap">＋ Přidat mapování</button>
+    </div>
+  </div>
+
+  <!-- KROK 3: Svátky -->
+  <div class="card">
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <div class="step-title">Státní svátky ČR</div>
+    </div>
+    <p class="step-desc">Svátky jsou vypočítány automaticky ze zákona č. 245/2000 Sb. (včetně pohyblivých Velikonoc). Dny se chovají jako víkend → typ <span class="badge">24h</span>. Lze upravit ručně.</p>
+
+    <div id="holidays-display" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; min-height:32px;"></div>
+
+    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
+      <div class="field" style="flex:1; min-width:220px;">
+        <label>Dny ve měsíci (čísla oddělená čárkami)</label>
+        <input id="holidays" type="text" placeholder="automaticky vyplněno" />
+      </div>
+      <button class="btn btn-secondary btn-small" id="btnReloadHolidays" title="Znovu načíst svátky pro zvolený měsíc">↺ Načíst svátky</button>
+    </div>
+  </div>
+
+  <!-- KROK 4: Náhled -->
+  <div class="card">
+    <div class="step-header">
+      <div class="step-num">4</div>
+      <div class="step-title">Náhled detekovaných událostí</div>
+    </div>
+    <p class="step-desc">Zobrazeno max. 40 událostí. Čas startu vždy <span class="badge">08:00</span>, délka 30 min.</p>
+
+    <div id="preview-wrap">
+      <div class="empty"><span class="empty-icon">🗂</span>Nejprve nahrajte Excel a klikněte na Aktualizovat náhled.</div>
+    </div>
+    <div id="status" class="idle">Žádný soubor nenahraný.</div>
+  </div>
+
+  <!-- KROK 5: Export -->
+  <div class="card">
+    <div class="step-header">
+      <div class="step-num">5</div>
+      <div class="step-title">Export do ICS</div>
+    </div>
+    <div class="divider"></div>
+    <div class="action-bar">
+      <div class="action-group">
+        <button class="btn btn-secondary" id="btnPreview">🔄 Aktualizovat náhled</button>
+        <button class="btn btn-primary" id="btnDownloadCombined">⬇ Společný ICS</button>
+        <button class="btn btn-accent" id="btnDownloadPerPerson">⬇ Zvlášť pro každého</button>
+      </div>
+      <div class="toggle-wrap">
+        <label class="toggle">
+          <input type="checkbox" id="onlyMD" checked>
+          <span class="slider"></span>
+        </label>
+        <span class="toggle-label">Pouze Šimkovič + Écsiová</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.wrapper -->
+
+<script>
+// ---- Výchozí měsíc = příští měsíc ----
+(function(){
+  const now = new Date();
+  const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const y = next.getFullYear();
+  const m = String(next.getMonth() + 1).padStart(2, '0');
+  document.getElementById('month').value = `${y}-${m}`;
+  const label = next.toLocaleString('cs-CZ', { month: 'long', year: 'numeric' });
+  document.getElementById('nextMonthLabel').textContent = '→ ' + label;
+})();
+
+// ---- Státní svátky ČR ----
+// Pevné svátky: [měsíc, den, název]
+const FIXED_HOLIDAYS = [
+  [1,  1,  'Nový rok / Den obnovy ČR'],
+  [5,  1,  'Svátek práce'],
+  [5,  8,  'Den vítězství'],
+  [7,  5,  'Den slovanských věrozvěstů'],
+  [7,  6,  'Den upálení mistra J. Husa'],
+  [9,  28, 'Den české státnosti'],
+  [10, 28, 'Den vzniku ČSR'],
+  [11, 17, 'Den boje za svobodu a demokracii'],
+  [12, 24, 'Štědrý den'],
+  [12, 25, '1. svátek vánoční'],
+  [12, 26, '2. svátek vánoční'],
+];
+
+// Výpočet Velikonoc (Gaussův algoritmus)
+function easterSunday(year) {
+  const a = year % 19, b = Math.floor(year/100), c = year % 100;
+  const d = Math.floor(b/4), e = b % 4, f = Math.floor((b+8)/25);
+  const g = Math.floor((b-f+1)/3), h = (19*a+b-d-g+15) % 30;
+  const i = Math.floor(c/4), k = c % 4;
+  const l = (32+2*e+2*i-h-k) % 7;
+  const m = Math.floor((a+11*h+22*l)/451);
+  const month = Math.floor((h+l-7*m+114)/31);
+  const day   = ((h+l-7*m+114) % 31) + 1;
+  return { month, day };
+}
+
+// Vrátí Map { day → název } pro daný rok a měsíc (1-based)
+function getCzechHolidaysForMonth(year, month) {
+  const map = new Map();
+  // Pevné
+  for (const [m, d, name] of FIXED_HOLIDAYS) {
+    if (m === month) map.set(d, name);
+  }
+  // Pohyblivé: Velký pátek a Velikonoční pondělí
+  const { month: em, day: ed } = easterSunday(year);
+  const easterDate = new Date(year, em-1, ed);
+  // Velký pátek = -2 dny
+  const gf = new Date(easterDate); gf.setDate(gf.getDate() - 2);
+  if (gf.getMonth()+1 === month) map.set(gf.getDate(), 'Velký pátek');
+  // Velikonoční pondělí = +1 den
+  const em2 = new Date(easterDate); em2.setDate(em2.getDate() + 1);
+  if (em2.getMonth()+1 === month) map.set(em2.getDate(), 'Velikonoční pondělí');
+  return map;
+}
+
+// Zjistí, jestli daný den je sobota/neděle
+function isWeekend(year, month, day) {
+  const dow = new Date(year, month-1, day).getDay();
+  return dow === 0 || dow === 6;
+}
+
+function updateHolidayDisplay() {
+  const ym = document.getElementById('month').value.split('-');
+  if (ym.length < 2 || !ym[0] || !ym[1]) return;
+  const year = parseInt(ym[0],10), month = parseInt(ym[1],10);
+  const holidays = getCzechHolidaysForMonth(year, month);
+
+  const display = document.getElementById('holidays-display');
+
+  if (holidays.size === 0) {
+    display.innerHTML = '<span style="color:var(--gray-500);font-size:.85rem">V tomto měsíci nejsou žádné státní svátky.</span>';
+    document.getElementById('holidays').value = '';
+    return;
+  }
+
+  // Seřadit
+  const sorted = [...holidays.entries()].sort((a,b) => a[0]-b[0]);
+  const workdayDays = [];
+
+  display.innerHTML = sorted.map(([day, name]) => {
+    const weekend = isWeekend(year, month, day);
+    if (!weekend) workdayDays.push(day);
+    const cls = weekend ? 'holiday-tag weekend-only' : 'holiday-tag';
+    const suffix = weekend ? ' (víkend)' : '';
+    return `<span class="${cls}" title="${name}${suffix}"><span class="day-num">${day}.</span>${name}${suffix ? '<span style="font-size:.75rem;opacity:.7"> víkend</span>' : ''}</span>`;
+  }).join('');
+
+  // Předvyplnit jen pracovní dny (víkendy jsou tak jako tak volné)
+  document.getElementById('holidays').value = workdayDays.join(', ');
+}
+
+document.getElementById('month').addEventListener('change', updateHolidayDisplay);
+document.getElementById('btnReloadHolidays').addEventListener('click', updateHolidayDisplay);
+
+// Spustit hned na začátku
+updateHolidayDisplay();
+
+const WEEKEND = new Set(["sobota","neděle"]);
+const nameMap = new Map([["Šimkovič","Martin"],["Écsiová","Domi"]]);
+
+const mapTableBody = document.querySelector('#mapTable tbody');
+function renderMap() {
+  mapTableBody.innerHTML = '';
+  for (const [k,v] of nameMap.entries()) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><input value="${k}" class="mapName"></td>
+                    <td><input value="${v}" class="mapSummary"></td>
+                    <td><button class="del-btn">🗑</button></td>`;
+    mapTableBody.appendChild(tr);
+    tr.querySelector('.del-btn').onclick = () => { nameMap.delete(k); renderMap(); };
+    tr.querySelector('.mapName').onchange = (e)=>{ nameMap.delete(k); nameMap.set(e.target.value.trim(), v); renderMap(); };
+    tr.querySelector('.mapSummary').onchange = (e)=>{ nameMap.set(k, e.target.value.trim()); };
+  }
+}
+renderMap();
+document.getElementById('addMap').onclick = () => { nameMap.set('', ''); renderMap(); };
+
+// Drop zone visual
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('file');
+const fileName = document.getElementById('fileName');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+
+let parsedRows = [], workbookSheet = null;
+
+fileInput.addEventListener('change', async (e) => {
+  const f = e.target.files[0];
+  if (f) handleFile(f);
+});
+
+async function handleFile(f) {
+  const data = await f.arrayBuffer();
+  const wb = XLSX.read(data);
+  workbookSheet = wb.Sheets[wb.SheetNames[0]];
+  fileName.textContent = '✓ ' + f.name;
+  dropZone.classList.add('loaded');
+  dropZone.querySelector('.drop-text').innerHTML = '<strong>Soubor nahrán</strong> — klikněte pro změnu';
+  setStatus(`Načten list: ${wb.SheetNames[0]} (${f.name})`, 'ok');
+}
+
+function parseExcel(ws) {
+  const data = XLSX.utils.sheet_to_json(ws, { header:1, raw:true });
+  let start = -1;
+  const dayNames = new Set(["pondělí","úterý","středa","čtvrtek","pátek","sobota","neděle"]);
+  for (let i=0;i<data.length;i++){
+    const r = data[i];
+    const c0 = (r[0]||'').toString().trim();
+    const c1 = (r[1]||'').toString().trim().toLowerCase();
+    if (/^\d{1,2}$/.test(c0) && dayNames.has(c1)) { start = i; break; }
+  }
+  if (start === -1) throw new Error('Nelze najít začátek dat – zkontrolujte formát.');
+  const out = [];
+  for (let i=start;i<data.length;i++){
+    const r = data[i]; if (!r) continue;
+    const d = r[0]; const wd = (r[1]||'').toString().trim().toLowerCase();
+    if (d==null || d==='') continue;
+    out.push({ day:parseInt(d,10), weekday:wd, a_pm:(r[2]||'').toString().trim(), a_night:(r[3]||'').toString().trim(), b_pm:(r[4]||'').toString().trim(), b_night:(r[5]||'').toString().trim() });
+  }
+  return out;
+}
+
+function buildDailyBadgeEvents(rows, year, month, tz, holidayDays, allowedRawNames){
+  const allEvents = [], eventsBySummary = new Map();
+  for (const row of rows){
+    const day = row.day;
+    const weekendLike = WEEKEND.has(row.weekday) || holidayDays.has(day);
+    const persons = new Map();
+    function add(name, label){ if (!name) return; if (allowedRawNames && !allowedRawNames.has(name)) return; if (!persons.has(name)) persons.set(name, new Set()); persons.get(name).add(label); }
+    if (weekendLike){ [row.a_pm,row.a_night,row.b_pm,row.b_night].forEach(n=>{ if(n) add(n,'24h'); }); }
+    else { if (row.a_pm) add(row.a_pm,'odpol.'); if (row.b_pm) add(row.b_pm,'odpol.'); if (row.a_night) add(row.a_night,'noční'); if (row.b_night) add(row.b_night,'noční'); }
+    for (const [rawName, labelsSet] of persons.entries()){
+      const mapped = nameMap.get(rawName) || rawName;
+      const labels = Array.from(labelsSet);
+      labels.sort((a,b)=>{ const o={'24h':0,'odpol.':1,'noční':2}; return (o[a]??9)-(o[b]??9); });
+      const labelText = labels.join(' + ');
+      const summary = `${mapped} – ${labelText}`;
+      const description = `${rawName} | denní značka služby v 08:00 (${labelText})`;
+      const start = new Date(Date.UTC(year, month-1, day, 8, 0, 0));
+      const end   = new Date(Date.UTC(year, month-1, day, 8, 30, 0));
+      const ev = { summary, tz, start, end, description, uid: `${mapped}-${year}${String(month).padStart(2,'0')}${String(day).padStart(2,'0')}-badge-${labelText.replace(/\s+/g,'')}` };
+      allEvents.push(ev);
+      if (!eventsBySummary.has(summary)) eventsBySummary.set(summary, []);
+      eventsBySummary.get(summary).push(ev);
+    }
+  }
+  return { allEvents, eventsBySummary };
+}
+
+function icsFromEvents(evts){
+  const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//ChatGPT//IHK Shifts Export (08:00 badge)//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+  const dtstamp = new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');
+  const fmt = (d)=>`${d.getUTCFullYear()}${String(d.getUTCMonth()+1).padStart(2,'0')}${String(d.getUTCDate()).padStart(2,'0')}T${String(d.getUTCHours()).padStart(2,'0')}${String(d.getUTCMinutes()).padStart(2,'0')}${String(d.getUTCSeconds()).padStart(2,'0')}`;
+  for (const ev of evts){
+    lines.push('BEGIN:VEVENT');
+    lines.push(`UID:${ev.uid}@ihk-fnhk`);
+    lines.push(`DTSTAMP:${dtstamp}`);
+    lines.push(`DTSTART;TZID=${ev.tz}:${fmt(ev.start)}`);
+    lines.push(`DTEND;TZID=${ev.tz}:${fmt(ev.end)}`);
+    lines.push(`SUMMARY:${ev.summary}`);
+    lines.push(`DESCRIPTION:${ev.description}`);
+    lines.push('END:VEVENT');
+  }
+  lines.push('END:VCALENDAR');
+  return lines.join('\n');
+}
+
+function download(filename, text){
+  const blob = new Blob([text], {type:'text/calendar;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+function setStatus(msg, type = 'idle'){
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = type;
+}
+
+function getHolidays(){
+  const raw = document.getElementById('holidays').value.trim();
+  if (!raw) return new Set();
+  return new Set(raw.split(',').map(s=>parseInt(s.trim(),10)).filter(n=>!isNaN(n)));
+}
+
+function refreshPreview(){
+  if (!workbookSheet){ document.getElementById('preview-wrap').innerHTML = '<div class="empty"><span class="empty-icon">⚠️</span>Nejprve nahrajte soubor.</div>'; return; }
+  try { parsedRows = parseExcel(workbookSheet); } catch(err) { setStatus('Chyba: ' + err.message, 'err'); return; }
+  const ym = document.getElementById('month').value.split('-');
+  const year = parseInt(ym[0],10), month = parseInt(ym[1],10);
+  const tz = document.getElementById('tz').value;
+  const holidays = getHolidays();
+  const allowed = document.getElementById('onlyMD').checked ? new Set(['Šimkovič','Écsiová']) : null;
+  const { allEvents } = buildDailyBadgeEvents(parsedRows, year, month, tz, holidays, allowed);
+  const rows = allEvents.sort((a,b)=>a.start-b.start).slice(0,40).map(ev=>{
+    const d = ev.start;
+    const dd = String(d.getUTCDate()).padStart(2,'0'); const mm = String(d.getUTCMonth()+1).padStart(2,'0');
+    const hh = String(d.getUTCHours()).padStart(2,'0'); const mi = String(d.getUTCMinutes()).padStart(2,'0');
+    return `<tr><td><strong>${dd}.${mm}.</strong></td><td>${hh}:${mi}</td><td>${ev.summary}</td><td style="color:var(--gray-500);font-size:.8rem">${ev.description}</td></tr>`;
+  }).join('');
+  document.getElementById('preview-wrap').innerHTML = `<table class="preview-table"><thead><tr><th>Datum</th><th>Čas</th><th>SUMMARY</th><th>Popis</th></tr></thead><tbody>${rows}</tbody></table>`;
+  setStatus(`✓ Detekováno událostí: ${allEvents.length}`, 'ok');
+}
+
+document.getElementById('btnPreview').onclick = refreshPreview;
+
+document.getElementById('btnDownloadCombined').onclick = () => {
+  if (!workbookSheet){ alert('Nahrajte nejprve Excel.'); return; }
+  refreshPreview();
+  const ym = document.getElementById('month').value.split('-');
+  const year = parseInt(ym[0],10), month = parseInt(ym[1],10);
+  const tz = document.getElementById('tz').value;
+  const holidays = getHolidays();
+  const allowed = document.getElementById('onlyMD').checked ? new Set(['Šimkovič','Écsiová']) : null;
+  const { allEvents } = buildDailyBadgeEvents(parsedRows, year, month, tz, holidays, allowed);
+  download(`sluzby_${year}_${String(month).padStart(2,'0')}_spolecne.ics`, icsFromEvents(allEvents));
+};
+
+document.getElementById('btnDownloadPerPerson').onclick = () => {
+  if (!workbookSheet){ alert('Nahrajte nejprve Excel.'); return; }
+  refreshPreview();
+  const ym = document.getElementById('month').value.split('-');
+  const year = parseInt(ym[0],10), month = parseInt(ym[1],10);
+  const tz = document.getElementById('tz').value;
+  const holidays = getHolidays();
+  const allowed = document.getElementById('onlyMD').checked ? new Set(['Šimkovič','Écsiová']) : null;
+  const { allEvents } = buildDailyBadgeEvents(parsedRows, year, month, tz, holidays, allowed);
+  const map = new Map();
+  for (const ev of allEvents){ if (!map.has(ev.summary)) map.set(ev.summary,[]); map.get(ev.summary).push(ev); }
+  for (const [summary, list] of map.entries()) download(`sluzby_${year}_${String(month).padStart(2,'0')}_${summary.replace(/\s+/g,'_')}.ics`, icsFromEvents(list));
+};
+</script>
+</body>
+</html>

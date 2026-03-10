@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Generátor léčebných informací</title>
+<title>OnkoText – Generátor léčebných informací</title>
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -14,11 +14,6 @@
   --sidebar-accent: #89b4fa;
   --sidebar-input: rgba(255,255,255,0.07);
   --sidebar-border: rgba(255,255,255,0.1);
-  --white: #ffffff;
-  --black: #111111;
-  --gray: #555;
-  --light: #888;
-  --border: #ddd;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -29,7 +24,7 @@ body {
   min-height: 100vh;
 }
 
-/* ═══ SIDEBAR ═══ */
+/* ── SIDEBAR ── */
 .sidebar {
   background: var(--sidebar);
   color: var(--sidebar-fg);
@@ -41,367 +36,173 @@ body {
   scrollbar-width: thin;
   scrollbar-color: #313244 transparent;
 }
-.logo {
-  font-family: 'Source Serif 4', serif;
-  font-size: 18px;
-  font-weight: 600;
-  color: #fff;
-  margin-bottom: 2px;
-}
+.logo { font-family: 'Source Serif 4', serif; font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 2px; }
 .logo span { color: var(--sidebar-accent); }
-.logo-sub {
-  font-size: 10px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--sidebar-muted);
-  margin-bottom: 24px;
-}
+.logo-sub { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--sidebar-muted); margin-bottom: 24px; }
 
-.protocol-tabs {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-  margin-bottom: 22px;
-}
+.protocol-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 22px; }
 .ptab {
-  padding: 6px 12px;
-  border: 1px solid var(--sidebar-border);
-  background: transparent;
-  color: var(--sidebar-muted);
-  font-family: 'Source Sans 3', sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.15s;
+  padding: 6px 12px; border: 1px solid var(--sidebar-border);
+  background: transparent; color: var(--sidebar-muted);
+  font-family: 'Source Sans 3', sans-serif; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.5px; border-radius: 20px; cursor: pointer; transition: all 0.15s;
 }
-.ptab.active {
-  background: var(--sidebar-accent);
-  border-color: var(--sidebar-accent);
-  color: #1e2030;
-}
+.ptab.active { background: var(--sidebar-accent); border-color: var(--sidebar-accent); color: #1e2030; }
 .ptab:not(.active):hover { color: var(--sidebar-fg); border-color: var(--sidebar-fg); }
 
 .sec-label {
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--sidebar-muted);
-  margin: 18px 0 10px;
-  padding-bottom: 7px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-size: 9.5px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--sidebar-muted); margin: 18px 0 10px;
+  padding-bottom: 7px; border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 .field { margin-bottom: 10px; }
-.field label {
-  display: block;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--sidebar-muted);
-  margin-bottom: 4px;
+.field label { display: block; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--sidebar-muted); margin-bottom: 4px; }
+.field input, .field textarea {
+  width: 100%; background: var(--sidebar-input); border: 1px solid var(--sidebar-border);
+  border-radius: 6px; padding: 8px 10px; color: var(--sidebar-fg);
+  font-family: 'Source Sans 3', sans-serif; font-size: 13px; outline: none; transition: border-color 0.15s;
 }
-.field input, .field select, .field textarea {
-  width: 100%;
-  background: var(--sidebar-input);
-  border: 1px solid var(--sidebar-border);
-  border-radius: 6px;
-  padding: 8px 10px;
-  color: var(--sidebar-fg);
-  font-family: 'Source Sans 3', sans-serif;
-  font-size: 13px;
-  outline: none;
-  transition: border-color 0.15s;
-}
-.field input:focus, .field select:focus, .field textarea:focus {
-  border-color: var(--sidebar-accent);
-}
-.field select option { background: #2a2a3e; }
+.field input:focus, .field textarea:focus { border-color: var(--sidebar-accent); }
 .field textarea { resize: vertical; min-height: 60px; line-height: 1.5; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 .btn-generate {
-  width: 100%;
-  margin-top: 18px;
-  padding: 12px;
-  background: var(--sidebar-accent);
-  color: #1e2030;
-  border: none;
-  border-radius: 7px;
-  font-family: 'Source Sans 3', sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.15s;
+  width: 100%; margin-top: 18px; padding: 12px;
+  background: var(--sidebar-accent); color: #1e2030; border: none; border-radius: 7px;
+  font-family: 'Source Sans 3', sans-serif; font-size: 12px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.15s;
 }
 .btn-generate:hover { background: #74c7ec; transform: translateY(-1px); }
 
-/* toggle switches */
-.toggle-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 0;
-}
-.toggle-label {
-  font-size: 12px;
-  color: var(--sidebar-fg);
-}
-.toggle {
-  position: relative;
-  width: 36px; height: 20px;
-}
+.toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+.toggle-label { font-size: 12px; color: var(--sidebar-fg); }
+.toggle { position: relative; width: 36px; height: 20px; }
 .toggle input { opacity: 0; width: 0; height: 0; }
-.slider {
-  position: absolute; inset: 0;
-  background: rgba(255,255,255,0.15);
-  border-radius: 20px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.slider:before {
-  content: '';
-  position: absolute;
-  width: 14px; height: 14px;
-  left: 3px; top: 3px;
-  background: white;
-  border-radius: 50%;
-  transition: 0.2s;
-}
+.slider { position: absolute; inset: 0; background: rgba(255,255,255,0.15); border-radius: 20px; cursor: pointer; transition: 0.2s; }
+.slider:before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.2s; }
 input:checked + .slider { background: var(--sidebar-accent); }
 input:checked + .slider:before { transform: translateX(16px); }
 
-/* ═══ PREVIEW ═══ */
-.preview {
-  padding: 36px 40px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-}
-
-.preview-empty {
-  margin: auto;
-  text-align: center;
-  color: #aaa;
-}
+/* ── PREVIEW ── */
+.preview { padding: 36px 40px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.preview-empty { margin: auto; text-align: center; color: #aaa; }
 .preview-empty-icon { font-size: 44px; opacity: 0.3; margin-bottom: 12px; }
-.preview-empty h2 {
-  font-family: 'Source Serif 4', serif;
-  font-size: 20px;
-  font-weight: 400;
-  opacity: 0.45;
-  margin-bottom: 6px;
-}
+.preview-empty h2 { font-family: 'Source Serif 4', serif; font-size: 20px; font-weight: 400; opacity: 0.45; margin-bottom: 6px; }
 .preview-empty p { font-size: 12px; opacity: 0.4; }
 
-/* OUTPUT CARD */
+/* ── OUTPUT CARD ── */
 .output-card {
-  background: var(--white);
-  width: 100%;
-  max-width: 680px;
+  background: #fff; width: 100%; max-width: 740px;
   box-shadow: 0 2px 20px rgba(0,0,0,0.1);
-  animation: fadeUp 0.2s ease;
+  animation: fadeUp 0.2s ease; border-radius: 6px; overflow: hidden;
 }
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 
 .card-toolbar {
-  background: #1e2030;
-  padding: 8px 16px;
-  display: flex;
-  justify-content: flex-end;
+  background: #1e2030; padding: 10px 16px;
+  display: flex; justify-content: space-between; align-items: center;
 }
+.card-toolbar-label { color: #6c7086; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
 .btn-copy {
-  padding: 5px 14px;
-  background: rgba(137,180,250,0.15);
-  border: 1px solid rgba(137,180,250,0.3);
-  border-radius: 5px;
-  color: #89b4fa;
-  font-family: 'Source Sans 3', sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  transition: all 0.15s;
+  padding: 6px 18px; background: rgba(137,180,250,0.15); border: 1px solid rgba(137,180,250,0.3);
+  border-radius: 5px; color: #89b4fa; font-family: 'Source Sans 3', sans-serif;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; transition: all 0.15s;
 }
-.btn-copy:hover { background: rgba(137,180,250,0.25); }
+.btn-copy:hover { background: rgba(137,180,250,0.28); }
 .btn-copy.copied { background: rgba(166,227,161,0.2); color: #a6e3a1; border-color: rgba(166,227,161,0.3); }
 
-/* Dokument samotný */
-.inv-doc {
-  padding: 36px 44px 44px;
-  font-family: 'Times New Roman', Times, serif;
-  font-size: 14px;
-  line-height: 1.55;
-  color: #000;
-}
-.inv-doc .doc-title {
-  font-size: 14.5px;
-  font-weight: 700;
-  margin-bottom: 18px;
-}
-.inv-doc hr.doc-rule {
-  border: none;
-  border-top: 1px solid #000;
-  margin: 0 0 24px;
-}
-.inv-doc hr.doc-rule-bottom {
-  border: none;
-  border-top: 1px solid #000;
-  margin: 28px 0 0;
-}
-.inv-doc .doc-section-head {
-  font-weight: 700;
-  margin-bottom: 14px;
-}
-.inv-doc .doc-med {
-  margin-bottom: 14px;
-}
-.inv-doc .doc-med-line1 { display: block; }
-.inv-doc .doc-med-line2 { display: block; }
-.inv-doc .doc-rezim-head {
-  font-weight: 700;
-  margin-top: 18px;
-  margin-bottom: 3px;
-}
-.inv-doc .doc-rezim-p { margin: 0; line-height: 1.65; }
+.doc-wrapper { padding: 28px 32px 32px; font-family: 'Times New Roman', serif; font-size: 13.5px; color: #000; }
+.doc-title { font-size: 14px; font-weight: 700; margin-bottom: 18px; line-height: 1.4; }
 
-@media print {
-  .sidebar { display: none; }
-  body { display: block; }
-  .preview { padding: 0; }
-  .card-toolbar { display: none; }
-  .output-card { box-shadow: none; max-width: 100%; }
-}
+.med-table { width: 100%; border-collapse: collapse; font-family: 'Times New Roman', serif; font-size: 13px; }
+.med-table th { border: 1px solid #000; padding: 6px 10px; background: #d9d9d9; font-weight: 700; text-align: left; }
+.med-table td { border: 1px solid #000; padding: 6px 10px; vertical-align: middle; line-height: 1.45; }
+.med-table .section-row td { background: #f2f2f2; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
+.med-table .note-row td { font-style: italic; font-size: 12.5px; color: #333; }
+.med-table .warn-row td { font-size: 12.5px; color: #111; padding-left: 14px; }
+.med-table .even td { background: #fafafa; }
+
+.doc-hint { margin: 10px 32px 18px; font-size: 11px; color: #999; font-family: 'Source Sans 3', sans-serif; text-align: center; }
 </style>
 </head>
 <body>
 
-<!-- ═══ SIDEBAR ═══ -->
 <aside class="sidebar">
   <div class="logo">Onko<span>Text</span></div>
   <div class="logo-sub">Generátor léčebných informací</div>
 
-  <!-- PROTOKOLY -->
   <div class="sec-label">Protokol</div>
   <div class="protocol-tabs">
     <button class="ptab active" onclick="selectProtocol('rchop', this)">R-CHOP</button>
     <button class="ptab" onclick="selectProtocol('rcop', this)">R-COP</button>
+    <button class="ptab" onclick="selectProtocol('brukinsa', this)">Brukinsa</button>
+    <button class="ptab" onclick="selectProtocol('calquence', this)">Calquence</button>
     <button class="ptab" onclick="selectProtocol('custom', this)">Vlastní</button>
   </div>
 
-  <!-- PARAMETRY -->
+  <!-- R-CHOP -->
   <div id="params-rchop">
     <div class="sec-label">Parametry</div>
-    <div class="field">
-      <label>Datum zahájení ambulantní léčby</label>
-      <input type="date" id="rchop-datum">
-    </div>
+    <div class="field"><label>Datum zahájení ambulantní léčby</label><input type="date" id="rchop-datum"></div>
     <div class="row2">
-      <div class="field">
-        <label>Cyklus č.</label>
-        <input type="number" id="rchop-cyklus" value="1" min="1" max="8">
-      </div>
-      <div class="field">
-        <label>Počet dní pred.</label>
-        <input type="number" id="rchop-dny" value="4" min="1" max="14">
-      </div>
+      <div class="field"><label>Cyklus č.</label><input type="number" id="rchop-cyklus" value="1" min="1" max="8"></div>
+      <div class="field"><label>Počet dní pred.</label><input type="number" id="rchop-dny" value="4" min="1" max="14"></div>
     </div>
-    <div class="field">
-      <label>Poznámka navíc (volitelné)</label>
-      <textarea id="rchop-poznamka" placeholder="Např. kontrola za 3 týdny…"></textarea>
-    </div>
-
+    <div class="field"><label>Poznámka (volitelné)</label><textarea id="rchop-poznamka" placeholder="Např. kontrola za 3 týdny…"></textarea></div>
     <div class="sec-label">Možnosti</div>
-    <div class="toggle-row">
-      <span class="toggle-label">Zahrnout Kalnormin</span>
-      <label class="toggle"><input type="checkbox" id="opt-kalnormin" checked><span class="slider"></span></label>
-    </div>
-    <div class="toggle-row">
-      <span class="toggle-label">Zahrnout Controloc</span>
-      <label class="toggle"><input type="checkbox" id="opt-controloc" checked><span class="slider"></span></label>
-    </div>
-    <div class="toggle-row">
-      <span class="toggle-label">Zahrnout Zarzio</span>
-      <label class="toggle"><input type="checkbox" id="opt-zarzio" checked onchange="document.getElementById('zarzio-dny-wrap').style.display=this.checked?'block':'none'"><span class="slider"></span></label>
-    </div>
-    <div class="field" id="zarzio-dny-wrap">
-      <label>Počet dní Zarzio</label>
-      <input type="number" id="opt-zarzio-dny" value="4" min="1" max="14">
-    </div>
-    <div class="toggle-row">
-      <span class="toggle-label">Pokyn k dietě (bez cukru)</span>
-      <label class="toggle"><input type="checkbox" id="opt-dieta" checked><span class="slider"></span></label>
-    </div>
-    <div class="toggle-row">
-      <span class="toggle-label">Granegis při nevolnosti</span>
-      <label class="toggle"><input type="checkbox" id="opt-granegis" checked><span class="slider"></span></label>
-    </div>
+    <div class="toggle-row"><span class="toggle-label">Zahrnout Kalnormin</span><label class="toggle"><input type="checkbox" id="opt-kalnormin" checked><span class="slider"></span></label></div>
+    <div class="toggle-row"><span class="toggle-label">Zahrnout Controloc</span><label class="toggle"><input type="checkbox" id="opt-controloc" checked><span class="slider"></span></label></div>
+    <div class="toggle-row"><span class="toggle-label">Zahrnout Zarzio</span><label class="toggle"><input type="checkbox" id="opt-zarzio" checked onchange="document.getElementById('zarzio-dny-wrap').style.display=this.checked?'block':'none'"><span class="slider"></span></label></div>
+    <div class="field" id="zarzio-dny-wrap"><label>Počet dní Zarzio</label><input type="number" id="opt-zarzio-dny" value="5" min="1" max="14"></div>
+    <div class="toggle-row"><span class="toggle-label">Pokyn k dietě (bez cukru)</span><label class="toggle"><input type="checkbox" id="opt-dieta" checked><span class="slider"></span></label></div>
+    <div class="toggle-row"><span class="toggle-label">Granegis při nevolnosti</span><label class="toggle"><input type="checkbox" id="opt-granegis" checked><span class="slider"></span></label></div>
   </div>
 
+  <!-- R-COP -->
   <div id="params-rcop" style="display:none;">
     <div class="sec-label">Parametry</div>
-    <div class="field">
-      <label>Datum zahájení ambulantní léčby</label>
-      <input type="date" id="rcop-datum">
-    </div>
+    <div class="field"><label>Datum zahájení ambulantní léčby</label><input type="date" id="rcop-datum"></div>
     <div class="row2">
-      <div class="field">
-        <label>Cyklus č.</label>
-        <input type="number" id="rcop-cyklus" value="1" min="1" max="8">
-      </div>
-      <div class="field">
-        <label>Počet dní pred.</label>
-        <input type="number" id="rcop-dny" value="4" min="1" max="14">
-      </div>
+      <div class="field"><label>Cyklus č.</label><input type="number" id="rcop-cyklus" value="1" min="1" max="8"></div>
+      <div class="field"><label>Počet dní pred.</label><input type="number" id="rcop-dny" value="4" min="1" max="14"></div>
     </div>
-    <div class="field">
-      <label>Poznámka navíc (volitelné)</label>
-      <textarea id="rcop-poznamka" placeholder="Např. kontrola za 3 týdny…"></textarea>
-    </div>
+    <div class="field"><label>Poznámka (volitelné)</label><textarea id="rcop-poznamka" placeholder="Např. kontrola za 3 týdny…"></textarea></div>
     <div class="sec-label">Možnosti</div>
-    <div class="toggle-row">
-      <span class="toggle-label">Zahrnout Kalnormin</span>
-      <label class="toggle"><input type="checkbox" id="rcop-kalnormin" checked><span class="slider"></span></label>
-    </div>
-    <div class="toggle-row">
-      <span class="toggle-label">Zahrnout Helicid</span>
-      <label class="toggle"><input type="checkbox" id="rcop-helicid" checked><span class="slider"></span></label>
-    </div>
-    <div class="toggle-row">
-      <span class="toggle-label">Pokyn k dietě (bez cukru)</span>
-      <label class="toggle"><input type="checkbox" id="rcop-dieta" checked><span class="slider"></span></label>
-    </div>
-    <div class="toggle-row">
-      <span class="toggle-label">Granegis při nevolnosti</span>
-      <label class="toggle"><input type="checkbox" id="rcop-granegis" checked><span class="slider"></span></label>
-    </div>
+    <div class="toggle-row"><span class="toggle-label">Zahrnout Kalnormin</span><label class="toggle"><input type="checkbox" id="rcop-kalnormin" checked><span class="slider"></span></label></div>
+    <div class="toggle-row"><span class="toggle-label">Zahrnout Helicid</span><label class="toggle"><input type="checkbox" id="rcop-helicid" checked><span class="slider"></span></label></div>
+    <div class="toggle-row"><span class="toggle-label">Pokyn k dietě (bez cukru)</span><label class="toggle"><input type="checkbox" id="rcop-dieta" checked><span class="slider"></span></label></div>
+    <div class="toggle-row"><span class="toggle-label">Granegis při nevolnosti</span><label class="toggle"><input type="checkbox" id="rcop-granegis" checked><span class="slider"></span></label></div>
   </div>
 
+  <!-- Brukinsa -->
+  <div id="params-brukinsa" style="display:none;">
+    <div class="sec-label">Parametry</div>
+    <div class="field"><label>Datum zahájení léčby</label><input type="date" id="brukinsa-datum"></div>
+    <div class="field"><label>Poznámka (volitelné)</label><textarea id="brukinsa-poznamka" placeholder="Např. kontrola za 4 týdny…"></textarea></div>
+    <div class="sec-label">Možnosti</div>
+    <div class="toggle-row"><span class="toggle-label">Zahrnout interakční upozornění</span><label class="toggle"><input type="checkbox" id="brukinsa-interakce" checked><span class="slider"></span></label></div>
+  </div>
+
+  <!-- Calquence -->
+  <div id="params-calquence" style="display:none;">
+    <div class="sec-label">Parametry</div>
+    <div class="field"><label>Datum zahájení léčby</label><input type="date" id="calquence-datum"></div>
+    <div class="field"><label>Poznámka (volitelné)</label><textarea id="calquence-poznamka" placeholder="Např. kontrola za 4 týdny…"></textarea></div>
+    <div class="sec-label">Možnosti</div>
+    <div class="toggle-row"><span class="toggle-label">Doporučení pro PL (hypertenze)</span><label class="toggle"><input type="checkbox" id="calquence-ht" checked><span class="slider"></span></label></div>
+    <div class="toggle-row"><span class="toggle-label">Zahrnout upozornění (interakce, operace)</span><label class="toggle"><input type="checkbox" id="calquence-warn" checked><span class="slider"></span></label></div>
+  </div>
+
+  <!-- Vlastní -->
   <div id="params-custom" style="display:none;">
     <div class="sec-label">Vlastní text</div>
-    <div class="field">
-      <label>Název léčby / záhlaví</label>
-      <input type="text" id="custom-nazev" placeholder="např. ABVD 2. cyklus">
-    </div>
-    <div class="field">
-      <label>Text (každý řádek = 1 řádek výstupu)</label>
-      <textarea id="custom-text" style="min-height:160px;" placeholder="Sem vložte libovolný text…"></textarea>
-    </div>
+    <div class="field"><label>Název léčby / záhlaví</label><input type="text" id="custom-nazev" placeholder="např. ABVD 2. cyklus"></div>
+    <div class="field"><label>Text</label><textarea id="custom-text" style="min-height:160px;" placeholder="Sem vložte libovolný text…"></textarea></div>
   </div>
 
-  <button class="btn-generate" onclick="generate()">▶ Generovat text</button>
+  <button class="btn-generate" onclick="generate()">▶ Generovat</button>
 </aside>
 
-<!-- ═══ PREVIEW ═══ -->
 <main class="preview" id="preview">
   <div class="preview-empty" id="preview-empty">
     <div class="preview-empty-icon">💊</div>
@@ -412,203 +213,227 @@ input:checked + .slider:before { transform: translateX(16px); }
 
 <script>
 let currentProtocol = 'rchop';
+let storedClipboardHTML = '';
 
-// ── DATE HELPERS ──
-function tomorrowStr() {
-  const d = new Date(); d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0,10);
-}
-function addDays(dateStr, n) {
-  const d = new Date(dateStr); d.setDate(d.getDate() + n - 1); return d;
-}
-function fmtCS(dateObj) {
-  return dateObj.toLocaleDateString('cs-CZ', { day:'numeric', month:'numeric', year:'numeric' });
-}
-function medLine(label, dateFrom, dateTo) {
-  return `${label}  užívat od ${fmtCS(new Date(dateFrom))} do ${fmtCS(addDays(dateFrom, dateTo))}, poté vysadit`;
-}
-
-function todayStr() {
-  return new Date().toISOString().slice(0,10);
-}
+function todayStr() { return new Date().toISOString().slice(0,10); }
+function addDays(dateStr, n) { const d = new Date(dateStr); d.setDate(d.getDate() + n - 1); return d; }
+function fmtCS(d) { return d.toLocaleDateString('cs-CZ', { day:'numeric', month:'numeric', year:'numeric' }); }
 
 document.addEventListener('DOMContentLoaded', () => {
   const t = todayStr();
   document.getElementById('rchop-datum').value = t;
   document.getElementById('rcop-datum').value  = t;
-  document.getElementById('opt-zarzio-dny').value  = 5;
-  document.getElementById('pokr-zarzio-dny').value = 5;
+  document.getElementById('brukinsa-datum').value = t;
+  document.getElementById('calquence-datum').value = t;
 });
 
 function selectProtocol(name, btn) {
   currentProtocol = name;
   document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  ['rchop','rcop','custom'].forEach(p => {
+  ['rchop','rcop','brukinsa','calquence','custom'].forEach(p => {
     document.getElementById('params-' + p).style.display = p === name ? 'block' : 'none';
   });
 }
 
-function generate() {
+// Sestaví HTML tabulku – jednou pro náhled (s CSS třídami), jednou pro clipboard (inline styly)
+function buildRows(rows, poznamka, inline, lastColHeader) {
+  lastColHeader = lastColHeader || 'Vysadit po';
+
+  const S = inline ? {
+    th:      'border:1px solid #000;padding:6px 10px;background:#d9d9d9;font-weight:bold;font-family:"Times New Roman",serif;font-size:13px;text-align:left;',
+    section: 'border:1px solid #000;padding:6px 10px;background:#f2f2f2;font-weight:bold;font-family:"Times New Roman",serif;font-size:12px;text-transform:uppercase;letter-spacing:0.3px;',
+    note:    'border:1px solid #000;padding:6px 10px;font-style:italic;font-family:"Times New Roman",serif;font-size:12px;color:#333;',
+    tdW:     'border:1px solid #000;padding:6px 10px;font-family:"Times New Roman",serif;font-size:13px;background:#ffffff;',
+    tdG:     'border:1px solid #000;padding:6px 10px;font-family:"Times New Roman",serif;font-size:13px;background:#fafafa;',
+  } : null;
+
   let html = '';
-  let plain = '';
-  let title = '';
+  let rowIdx = 0;
 
-  function fmtDatum(datum, dny) {
-    const od = fmtCS(new Date(datum));
-    const do_ = fmtCS(addDays(datum, dny));
-    return { od, do: do_ };
+  for (const r of rows) {
+    if (r.section) {
+      html += inline
+        ? `<tr><td colspan="4" style="${S.section}">${r.section}</td></tr>`
+        : `<tr class="section-row"><td colspan="4">${r.section}</td></tr>`;
+    } else if (r.isNote) {
+      html += inline
+        ? `<tr><td colspan="4" style="${S.note}">${r.text}</td></tr>`
+        : `<tr class="note-row"><td colspan="4">${r.text}</td></tr>`;
+    } else {
+      const evenClass = rowIdx % 2 !== 0 ? ' even' : '';
+      const tdStyle   = inline ? (rowIdx % 2 !== 0 ? S.tdG : S.tdW) : '';
+      html += inline
+        ? `<tr>
+            <td style="${tdStyle}"><b>${r.name}</b></td>
+            <td style="${tdStyle}">${r.dose}</td>
+            <td style="${tdStyle}">${r.od}</td>
+            <td style="${tdStyle}">${r.do_}</td>
+           </tr>`
+        : `<tr class="${evenClass}">
+            <td><b>${r.name}</b></td>
+            <td>${r.dose}</td>
+            <td>${r.od}</td>
+            <td>${r.do_}</td>
+           </tr>`;
+      rowIdx++;
+    }
   }
 
-  function buildProtocol(prefix) {
-    const isMain   = prefix === 'rchop';
-    const cyklus   = document.getElementById(isMain ? 'rchop-cyklus' : 'pokr-cyklus').value;
-    const dny      = parseInt(document.getElementById(isMain ? 'rchop-dny' : 'pokr-dny').value);
-    const datum    = document.getElementById(isMain ? 'rchop-datum' : 'pokr-datum').value;
-    const poznamka = document.getElementById(isMain ? 'rchop-poznamka' : 'pokr-poznamka').value.trim();
-    const kalnormin = document.getElementById(isMain ? 'opt-kalnormin' : 'pokr-kalnormin').checked;
-    const controloc = document.getElementById(isMain ? 'opt-controloc' : 'pokr-controloc').checked;
-    const zarzio    = document.getElementById(isMain ? 'opt-zarzio'    : 'pokr-zarzio').checked;
-    const zarzioDny = parseInt(document.getElementById(isMain ? 'opt-zarzio-dny' : 'pokr-zarzio-dny').value) || 4;
-    const dieta     = document.getElementById(isMain ? 'opt-dieta'     : 'pokr-dieta').checked;
-    const granegis  = document.getElementById(isMain ? 'opt-granegis'  : 'pokr-granegis').checked;
-
-    if (!datum) { alert('Vyplňte prosím datum zahájení ambulantní léčby.'); return null; }
-
-    const verb = isMain ? 'zahájen' : 'pokračování v';
-    const titleTxt = isMain
-      ? `Dne ${fmtCS(new Date())} zahájen ${cyklus}. cyklus chemoterapie R-CHOP dle CATO.`
-      : `Dnes pokračování v chemoterapii R-CHOP ${cyklus}. cyklus dle CATO.`;
-
-    const dt  = fmtDatum(datum, dny);
-    const dtz = fmtDatum(datum, zarzioDny);
-
-    // --- HTML ---
-    let h = '';
-    h += `<p class="doc-title">${titleTxt}</p>`;
-    h += `<hr class="doc-rule">`;
-    h += `<p class="doc-section-head">Dokončení chemoimunoterapie ambulantně:</p>`;
-
-    function medHtml(name, dose, od, do_) {
-      return `<div class="doc-med">
-        <span class="doc-med-line1"><strong>${name}</strong> ${dose}</span>
-        <span class="doc-med-line2">užívat <strong>${od} – ${do_}</strong>, poté vysadit.</span>
-      </div>`;
-    }
-
-    h += medHtml('Prednison 20 mg', '3-2-0 (ráno-poledne-večer)', dt.od, dt.do);
-    if (kalnormin) h += medHtml('Kalnormin 1 tbl', '1-0-1', dt.od, dt.do);
-    if (controloc) h += medHtml('Controloc 40 mg', '1-0-0', dt.od, dt.do);
-    if (zarzio)    h += medHtml('Zarzio', '0,5 ml/48 MU 1-0-0<br>podkožní injekcí', dtz.od, dtz.do);
-
-    if (dieta || granegis) {
-      h += `<p class="doc-rezim-head">Režimová doporučení:</p>`;
-      h += `<p class="doc-rezim-p">`;
-      if (dieta)    h += `V uvedených dnech vynechat sladká jídla a sladké nápoje.<br>`;
-      if (granegis) h += `Při nevolnosti lze užít <strong>Granegis 2 mg p.o., 1 tabletu</strong>.`;
-      h += `</p>`;
-    }
-    if (poznamka) {
-      h += `<p style="margin-top:14px;">${poznamka}</p>`;
-    }
-
-    h += `<hr class="doc-rule-bottom">`;
-
-    // --- PLAIN ---
-    let p = '';
-    p += titleTxt + '\n\n';
-    p += 'Dokončení chemoimunoterapie ambulantně:\n\n';
-    p += `Prednison 20 mg 3-2-0 (ráno-poledne-večer)\nužívat ${dt.od} – ${dt.do}, poté vysadit.\n\n`;
-    if (kalnormin) p += `Kalnormin 1 tbl 1-0-1\nužívat ${dt.od} – ${dt.do}, poté vysadit.\n\n`;
-    if (controloc) p += `Controloc 40 mg 1-0-0\nužívat ${dt.od} – ${dt.do}, poté vysadit.\n\n`;
-    if (zarzio)    p += `Zarzio 0,5 ml/48 MU 1-0-0\npodkožní injekcí užívat ${dtz.od} – ${dtz.do}, poté vysadit.\n\n`;
-    if (dieta || granegis) {
-      p += 'Režimová doporučení:\n';
-      if (dieta)    p += 'V uvedených dnech vynechat sladká jídla a sladké nápoje.\n';
-      if (granegis) p += 'Při nevolnosti lze užít Granegis 2 mg p.o., 1 tabletu.\n';
-    }
-    if (poznamka) p += '\n' + poznamka;
-
-    return { h, p };
+  if (poznamka) {
+    html += inline
+      ? `<tr><td colspan="4" style="${S.note}">${poznamka}</td></tr>`
+      : `<tr class="note-row"><td colspan="4">${poznamka}</td></tr>`;
   }
+
+  const thAttr = inline ? ` style="${S.th}"` : '';
+  const thead = `<thead><tr>
+    <th${thAttr}>Lék</th>
+    <th${thAttr}>Dávkování</th>
+    <th${thAttr}>Užívat od</th>
+    <th${thAttr}>${lastColHeader}</th>
+  </tr></thead>`;
+
+  const tableStyle = inline ? ' style="width:100%;border-collapse:collapse;font-family:\'Times New Roman\',serif;font-size:13px;"' : ' class="med-table"';
+  return `<table${tableStyle}>${thead}<tbody>${html}</tbody></table>`;
+}
+
+function generate() {
+  let titleTxt = '';
+  let rows = [];
+  let poznamka = '';
 
   if (currentProtocol === 'rchop') {
-    const r = buildProtocol('rchop');
-    if (!r) return;
-    html = r.h; plain = r.p;
+    const datum     = document.getElementById('rchop-datum').value;
+    const cyklus    = document.getElementById('rchop-cyklus').value;
+    const dny       = parseInt(document.getElementById('rchop-dny').value);
+    poznamka        = document.getElementById('rchop-poznamka').value.trim();
+    const kalnormin = document.getElementById('opt-kalnormin').checked;
+    const controloc = document.getElementById('opt-controloc').checked;
+    const zarzio    = document.getElementById('opt-zarzio').checked;
+    const zarzioDny = parseInt(document.getElementById('opt-zarzio-dny').value) || 5;
+    const dieta     = document.getElementById('opt-dieta').checked;
+    const granegis  = document.getElementById('opt-granegis').checked;
 
-  } else if (currentProtocol === 'rchop_pokr') {
-    const r = buildProtocol('pokr');
-    if (!r) return;
-    html = r.h; plain = r.p;
+    if (!datum) { alert('Vyplňte datum zahájení.'); return; }
+
+    titleTxt = `Dne ${fmtCS(new Date())} zahájen ${cyklus}. cyklus chemoterapie R-CHOP dle CATO.`;
+    const od  = fmtCS(new Date(datum));
+    const do_ = fmtCS(addDays(datum, dny));
+    const doz = fmtCS(addDays(datum, zarzioDny));
+
+    rows.push({ section: 'Dokončení chemoimunoterapie ambulantně' });
+    rows.push({ name: 'Prednison 20 mg',        dose: '3-2-0 (ráno-poledne-večer)', od, do_ });
+    if (kalnormin) rows.push({ name: 'Kalnormin 1 tbl',       dose: '1-0-1',                    od, do_ });
+    if (controloc) rows.push({ name: 'Controloc 40 mg',       dose: '1-0-0',                    od, do_ });
+    if (zarzio)    rows.push({ name: 'Zarzio 0,5 ml / 48 MU', dose: '1-0-0 podkožní injekcí',   od, do_: doz });
+
+    if (dieta || granegis) {
+      rows.push({ section: 'Režimová doporučení' });
+      if (dieta)    rows.push({ isNote: true, text: 'V uvedených dnech vynechat sladká jídla a sladké nápoje.' });
+      if (granegis) rows.push({ isNote: true, text: 'Při nevolnosti lze užít <b>Granegis 2 mg p.o., 1 tabletu</b>.' });
+    }
 
   } else if (currentProtocol === 'rcop') {
-    const cyklus   = document.getElementById('rcop-cyklus').value;
-    const dny      = parseInt(document.getElementById('rcop-dny').value);
-    const datum    = document.getElementById('rcop-datum').value;
-    const poznamka = document.getElementById('rcop-poznamka').value.trim();
+    const datum     = document.getElementById('rcop-datum').value;
+    const cyklus    = document.getElementById('rcop-cyklus').value;
+    const dny       = parseInt(document.getElementById('rcop-dny').value);
+    poznamka        = document.getElementById('rcop-poznamka').value.trim();
     const kalnormin = document.getElementById('rcop-kalnormin').checked;
     const helicid   = document.getElementById('rcop-helicid').checked;
     const dieta     = document.getElementById('rcop-dieta').checked;
     const granegis  = document.getElementById('rcop-granegis').checked;
 
-    if (!datum) { alert('Vyplňte prosím datum zahájení ambulantní léčby.'); return; }
+    if (!datum) { alert('Vyplňte datum zahájení.'); return; }
 
-    const dt = fmtDatum(datum, dny);
-    const titleTxt = `Dne ${fmtCS(new Date())} zahájen ${cyklus}. cyklus chemoterapie R-COP dle CATO.`;
+    titleTxt = `Dne ${fmtCS(new Date())} zahájen ${cyklus}. cyklus chemoterapie R-COP dle CATO.`;
+    const od  = fmtCS(new Date(datum));
+    const do_ = fmtCS(addDays(datum, dny));
 
-    let h = '';
-    h += `<p class="doc-title">${titleTxt}</p>`;
-    h += `<hr class="doc-rule">`;
-    h += `<p class="doc-section-head">Dokončení chemoimunoterapie ambulantně:</p>`;
-
-    function medHtml(name, dose, od, do_) {
-      return `<div class="doc-med">
-        <span class="doc-med-line1"><strong>${name}</strong> ${dose}</span>
-        <span class="doc-med-line2">užívat <strong>${od} – ${do_}</strong>, poté vysadit.</span>
-      </div>`;
-    }
-
-    h += medHtml('Prednison 20 mg', '3-0-0 (ráno)', dt.od, dt.do);
-    if (kalnormin) h += medHtml('Kalnormin 1 tbl', '1-0-1', dt.od, dt.do);
-    if (helicid)   h += medHtml('Helicid 20 mg', '1-0-0', dt.od, dt.do);
+    rows.push({ section: 'Dokončení chemoimunoterapie ambulantně' });
+    rows.push({ name: 'Prednison 20 mg', dose: '3-0-0 (ráno)', od, do_ });
+    if (kalnormin) rows.push({ name: 'Kalnormin 1 tbl', dose: '1-0-1', od, do_ });
+    if (helicid)   rows.push({ name: 'Helicid 20 mg',   dose: '1-0-0', od, do_ });
 
     if (dieta || granegis) {
-      h += `<p class="doc-rezim-head">Režimová doporučení:</p>`;
-      h += `<p class="doc-rezim-p">`;
-      if (dieta)    h += `V uvedených dnech vynechat sladká jídla a sladké nápoje.<br>`;
-      if (granegis) h += `Při nevolnosti lze užít <strong>Granegis 2 mg p.o., 1 tabletu</strong>.`;
-      h += `</p>`;
+      rows.push({ section: 'Režimová doporučení' });
+      if (dieta)    rows.push({ isNote: true, text: 'V uvedených dnech vynechat sladká jídla a sladké nápoje.' });
+      if (granegis) rows.push({ isNote: true, text: 'Při nevolnosti lze užít <b>Granegis 2 mg p.o., 1 tabletu</b>.' });
     }
-    if (poznamka) h += `<p style="margin-top:14px;">${poznamka}</p>`;
-    h += `<hr class="doc-rule-bottom">`;
 
-    let p = '';
-    p += titleTxt + '\n\n';
-    p += 'Dokončení chemoimunoterapie ambulantně:\n\n';
-    p += `Prednison 20 mg 3-0-0 (ráno)\nužívat ${dt.od} – ${dt.do}, poté vysadit.\n\n`;
-    if (kalnormin) p += `Kalnormin 1 tbl 1-0-1\nužívat ${dt.od} – ${dt.do}, poté vysadit.\n\n`;
-    if (helicid)   p += `Helicid 20 mg 1-0-0\nužívat ${dt.od} – ${dt.do}, poté vysadit.\n\n`;
-    if (dieta || granegis) {
-      p += 'Režimová doporučení:\n';
-      if (dieta)    p += 'V uvedených dnech vynechat sladká jídla a sladké nápoje.\n';
-      if (granegis) p += 'Při nevolnosti lze užít Granegis 2 mg p.o., 1 tabletu.\n';
+  } else if (currentProtocol === 'brukinsa') {
+    const datum      = document.getElementById('brukinsa-datum').value;
+    poznamka         = document.getElementById('brukinsa-poznamka').value.trim();
+    const interakce  = document.getElementById('brukinsa-interakce').checked;
+
+    if (!datum) { alert('Vyplňte datum zahájení léčby.'); return; }
+
+    titleTxt = `Dne ${fmtCS(new Date())} zahájena léčba přípravkem Brukinsa (zanubrutinib).`;
+    const od = fmtCS(new Date(datum));
+
+    rows.push({ section: 'Léčba – trvale (bez data vysazení)' });
+    rows.push({ name: 'Brukinsa (zanubrutinib) 80 mg', dose: '2-0-2 per os', od, do_: 'do progrese či nepřijatelné toxicity' });
+
+    if (interakce) {
+      rows.push({ section: 'Lékové interakce – upozornění' });
+      rows.push({ isNote: true, text: 'Během léčby zanubrutinibem je nutné věnovat zvýšenou pozornost možným lékovým interakcím, které mohou významně ovlivnit účinnost i bezpečnost terapie (viz SPC přípravku Brukinsa).' });
+      rows.push({ isNote: true, text: '<b>Kontraindikováno:</b> současné podávání silných inhibitorů nebo induktorů CYP3A, které mohou výrazně měnit plazmatické koncentrace zanubrutinibu.' });
+      rows.push({ isNote: true, text: '<b>Opatrnost:</b> léčiva metabolizovaná enzymy CYP2C8, CYP2C9 a CYP2C19.' });
+      rows.push({ isNote: true, text: '<b>Doporučuje se vyhnout:</b> lékům prodlužujícím QT interval a inhibitorům protonové pumpy.' });
+      rows.push({ isNote: true, text: '<b>Zakázáno:</b> přípravky obsahující třezalku tečkovanou, grapefruitová šťáva nebo šťáva ze sevillských (hořkých) pomerančů – mohou ovlivnit metabolismus léčiva.' });
+      rows.push({ section: 'Riziko krvácení – operace a invazivní výkony' });
+      rows.push({ isNote: true, text: 'Před operací či invazivním výkonem (biopsie, endoskopie apod.) přerušit léčbu zanubrutinibem <b>3–7 dní před výkonem</b> dle jeho rozsahu. Při nekomplikovaném průběhu lze léčbu obnovit za <b>3–7 dní po výkonu</b>. (Porucha funkce trombocytů, podobně jako u ASA.)' });
     }
-    if (poznamka) p += '\n' + poznamka;
 
-    html = h; plain = p;
+  } else if (currentProtocol === 'calquence') {
+    const datum   = document.getElementById('calquence-datum').value;
+    poznamka      = document.getElementById('calquence-poznamka').value.trim();
+    const showHT  = document.getElementById('calquence-ht').checked;
+    const showWarn= document.getElementById('calquence-warn').checked;
+
+    if (!datum) { alert('Vyplňte datum zahájení léčby.'); return; }
+
+    titleTxt = `Dne ${fmtCS(new Date())} zahájena léčba přípravkem Calquence (akalabrutinib).`;
+    const od = fmtCS(new Date(datum));
+
+    rows.push({ section: 'Léčba – trvale' });
+    rows.push({ name: 'Calquence (akalabrutinib) 100 mg', dose: '1-0-1 per os', od, do_: 'do progrese či nepřijatelné toxicity' });
+
+    if (showHT) {
+      rows.push({ section: 'Doporučení pro praktického lékaře' });
+      rows.push({ isNote: true, text: 'Cestou praktického lékaře prosíme o pravidelné sledování a vedení léčby arteriální hypertenze, zejména s ohledem na možný vliv nasazené terapie akalabrutinibem.' });
+    }
+
+    if (showWarn) {
+      rows.push({ section: 'Upozornění – lékové interakce a operace' });
+      rows.push({ isNote: true, text: '<b>UPOZORNĚNÍ:</b> V průběhu léčby akalabrutinibem (LP Calquence) nelze podávat některé léky, protože mohou výrazně ovlivnit účinek léku! Řídit se dle SPC.' });
+      rows.push({ isNote: true, text: 'Před operací či invazivním výkonem (biopsie, endoskopie apod.) přerušit léčbu akalabrutinibem <b>3–7 dní před výkonem</b> dle jeho rozsahu. Při nekomplikovaném průběhu lze léčbu obnovit za <b>3–7 dní po výkonu</b>. (Porucha funkce trombocytů, podobně jako u ASA.)' });
+      rows.push({ isNote: true, text: '<b>Zakázáno:</b> grapefruitová šťáva, grapefruit, pomelo, ani výtažky z třezalky tečkované – mohou ovlivnit metabolismus léčiva.' });
+    }
 
   } else if (currentProtocol === 'custom') {
-    title = document.getElementById('custom-nazev').value.trim() || 'Vlastní text';
-    plain = document.getElementById('custom-text').value.trim();
-    if (!plain) { alert('Vyplňte prosím vlastní text.'); return; }
-    html = `<p class="doc-title">${title}</p><hr class="doc-rule"><p style="white-space:pre-wrap;">${plain}</p><hr class="doc-rule-bottom">`;
+    titleTxt = document.getElementById('custom-nazev').value.trim() || 'Vlastní text';
+    const text = document.getElementById('custom-text').value.trim();
+    if (!text) { alert('Vyplňte prosím vlastní text.'); return; }
+    rows.push({ isNote: true, text: text.replace(/\n/g, '<br>') });
   }
 
-  renderOutput(title, html, plain);
+  const lastColHeader = (currentProtocol === 'brukinsa' || currentProtocol === 'calquence') ? 'Délka podávání' : 'Vysadit po';
+  const titleStyle = 'font-family:"Times New Roman",serif;font-size:14px;font-weight:bold;margin:0 0 16px 0;';
+
+  // Náhled (CSS třídy)
+  const previewHTML = `<p class="doc-title">${titleTxt}</p>` + buildRows(rows, poznamka, false, lastColHeader);
+
+  // Clipboard (inline styly – funguje ve Wordu)
+  storedClipboardHTML = `<html><body>
+    <p style="${titleStyle}">${titleTxt}</p>
+    ${buildRows(rows, poznamka, true, lastColHeader)}
+  </body></html>`;
+
+  renderOutput(previewHTML);
 }
 
-function renderOutput(title, html, plainText) {
+function renderOutput(previewHTML) {
   document.getElementById('preview-empty').style.display = 'none';
   const ex = document.getElementById('output-card');
   if (ex) ex.remove();
@@ -616,32 +441,32 @@ function renderOutput(title, html, plainText) {
   const card = document.createElement('div');
   card.className = 'output-card';
   card.id = 'output-card';
-  card.dataset.plain = plainText;
-
   card.innerHTML = `
     <div class="card-toolbar">
-      <button class="btn-copy" id="copy-btn" onclick="copyText()">⎘ Kopírovat text</button>
+      <span class="card-toolbar-label">Náhled výstupu</span>
+      <button class="btn-copy" id="copy-btn" onclick="copyTable()">⎘ Kopírovat do schránky</button>
     </div>
-    <div class="inv-doc" id="output-text-content">${html}</div>
+    <div class="doc-wrapper">${previewHTML}</div>
+    <p class="doc-hint">Ctrl+V ve Wordu vloží formátovanou tabulku.</p>
   `;
-
   document.getElementById('preview').appendChild(card);
   card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function copyText() {
-  const card = document.getElementById('output-card');
-  if (!card) return;
-  const plain = card.dataset.plain || '';
-  navigator.clipboard.writeText(plain).then(() => {
+async function copyTable() {
+  if (!storedClipboardHTML) return;
+  try {
+    const blob = new Blob([storedClipboardHTML], { type: 'text/html' });
+    const item = new ClipboardItem({ 'text/html': blob });
+    await navigator.clipboard.write([item]);
     const btn = document.getElementById('copy-btn');
-    btn.textContent = '✓ Zkopírováno';
+    btn.textContent = '✓ Zkopírováno!';
     btn.classList.add('copied');
-    setTimeout(() => {
-      btn.textContent = '⎘ Kopírovat text';
-      btn.classList.remove('copied');
-    }, 2000);
-  });
+    setTimeout(() => { btn.textContent = '⎘ Kopírovat do schránky'; btn.classList.remove('copied'); }, 2500);
+  } catch (err) {
+    alert('Kopírování selhalo – povolte přístup ke schránce v prohlížeči.');
+    console.error(err);
+  }
 }
 </script>
 </body>

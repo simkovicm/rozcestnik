@@ -175,6 +175,47 @@ const CONFIG = {
     opacity: .85;
   }
 
+  /* ── SEARCH ── */
+  .search-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 32px;
+    animation: fadeDown .6s .1s ease both;
+  }
+  .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 1.1rem;
+    pointer-events: none;
+  }
+  #search {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 11px 16px 11px 38px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: .85rem;
+    outline: none;
+    transition: border-color .15s;
+  }
+  #search::placeholder { color: var(--muted); }
+  #search:focus { border-color: var(--accent); }
+
+  .no-results {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: .8rem;
+    color: var(--muted);
+    padding: 32px 0;
+  }
+
   /* ── CLOCK ── */
   .clock {
     font-family: 'DM Mono', monospace;
@@ -202,6 +243,11 @@ const CONFIG = {
   <p class="subtitle" id="subtitle"></p>
   <h1 id="title"></h1>
 </header>
+
+<div class="search-wrap">
+  <span class="search-icon">⌕</span>
+  <input type="text" id="search" placeholder="Hledat odkaz…" autocomplete="off" spellcheck="false">
+</div>
 
 <main class="grid" id="grid"></main>
 
@@ -250,7 +296,37 @@ const CONFIG = {
     grid.appendChild(div);
   });
 
-  // Hodiny
+  // Vyhledávání
+  document.getElementById('search').addEventListener('input', function() {
+    const q = this.value.trim().toLowerCase();
+    let anyVisible = false;
+
+    document.querySelectorAll('.section').forEach(section => {
+      const items = section.querySelectorAll('.link-item');
+      let sectionVisible = false;
+      items.forEach(item => {
+        const match = !q || item.textContent.toLowerCase().includes(q);
+        item.style.display = match ? '' : 'none';
+        if (match) sectionVisible = true;
+      });
+      section.style.display = sectionVisible ? '' : 'none';
+      if (sectionVisible) anyVisible = true;
+    });
+
+    // Zpráva "nic nenalezeno"
+    let noRes = document.getElementById('no-results');
+    if (!anyVisible && q) {
+      if (!noRes) {
+        noRes = document.createElement('div');
+        noRes.id = 'no-results';
+        noRes.className = 'no-results';
+        noRes.textContent = 'Žádné výsledky.';
+        document.getElementById('grid').appendChild(noRes);
+      }
+    } else if (noRes) {
+      noRes.remove();
+    }
+  });
   function updateClock() {
     document.getElementById('clock').textContent = new Date().toLocaleTimeString('cs-CZ');
   }

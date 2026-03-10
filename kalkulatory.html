@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klinické kalkulačky</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e14;
+  --surface: #111620;
+  --surface2: #171d2b;
+  --border: #1e2a3a;
+  --accent: #00d4aa;
+  --accent2: #3b82f6;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --text: #e2e8f0;
+  --muted: #4a6080;
+  --label: #7a9ab8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  min-height: 100vh;
+  padding: 40px 24px 80px;
+  background-image:
+    radial-gradient(ellipse 80% 40% at 50% -5%, rgba(0,212,170,0.07), transparent),
+    radial-gradient(ellipse 40% 30% at 90% 60%, rgba(59,130,246,0.05), transparent);
+}
+
+header {
+  text-align: center;
+  margin-bottom: 48px;
+  animation: fadeDown .5s ease both;
+}
+.header-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+  opacity: .7;
+}
+header h1 {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 300;
+  letter-spacing: -.02em;
+  color: var(--text);
+}
+header h1 span { color: var(--accent); font-weight: 600; }
+
+/* GRID */
+.calc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* CARD */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  animation: fadeUp .4s ease both;
+  transition: border-color .2s;
+}
+.card:hover { border-color: #2a3a50; }
+
+.card-head {
+  background: var(--surface2);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.card-icon {
+  font-size: 16px;
+  width: 32px; height: 32px;
+  background: rgba(0,212,170,0.1);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.card-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--label);
+}
+.card-subtitle {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.card-body { padding: 20px; }
+
+/* FIELDS */
+.field { margin-bottom: 14px; }
+.field label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.field input, .field select {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  outline: none;
+  transition: border-color .15s, background .15s;
+}
+.field input:focus, .field select:focus {
+  border-color: var(--accent);
+  background: rgba(0,212,170,0.04);
+}
+.field select option { background: #111620; }
+.field .unit {
+  display: flex; gap: 8px; align-items: center;
+}
+.field .unit input { flex: 1; }
+.field .unit span {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* RESULT */
+.result {
+  margin-top: 16px;
+  background: rgba(0,212,170,0.06);
+  border: 1px solid rgba(0,212,170,0.15);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 52px;
+}
+.result-label {
+  font-size: 11px;
+  color: var(--label);
+  font-weight: 500;
+  letter-spacing: .5px;
+}
+.result-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: -1px;
+}
+.result-value.warn  { color: var(--warn); }
+.result-value.danger { color: var(--danger); }
+.result-value.muted { color: var(--muted); font-size: 13px; font-weight: 400; }
+.result-unit {
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: 4px;
+  font-weight: 400;
+}
+.result-note {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+  font-style: italic;
+}
+
+/* BTN */
+.btn-calc {
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px;
+  background: rgba(0,212,170,0.1);
+  border: 1px solid rgba(0,212,170,0.25);
+  border-radius: 8px;
+  color: var(--accent);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-calc:hover { background: rgba(0,212,170,0.18); border-color: var(--accent); }
+
+/* ANIMATIONS */
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card:nth-child(1) { animation-delay: .05s; }
+.card:nth-child(2) { animation-delay: .10s; }
+.card:nth-child(3) { animation-delay: .15s; }
+.card:nth-child(4) { animation-delay: .20s; }
+.card:nth-child(5) { animation-delay: .25s; }
+
+@keyframes pop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.pop { animation: pop .25s ease; }
+
+/* COPY BTN */
+.copy-row {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+.btn-copy-result {
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid rgba(0,212,170,0.2);
+  border-radius: 6px;
+  color: var(--muted);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex; align-items: center; gap: 5px;
+}
+.btn-copy-result:hover { border-color: var(--accent); color: var(--accent); }
+.btn-copy-result.copied { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-tag">Klinické kalkulačky</div>
+  <h1>Med<span>Calc</span></h1>
+</header>
+
+<div class="calc-grid">
+
+  <!-- ═══ 1. ClCr Cockcroft-Gault ═══ -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon">⚗</div>
+      <div>
+        <div class="card-title">Clearance kreatininu</div>
+        <div class="card-subtitle">Cockcroft-Gault</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="field">
+        <label>Datum narození</label>
+        <input type="text" id="cg-dob" placeholder="14.3.1949" maxlength="12">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Váha</label>
+          <div class="unit"><input type="number" id="cg-vaha" placeholder="70"><span>kg</span></div>
+        </div>
+        <div class="field">
+          <label>Pohlaví</label>
+          <select id="cg-pohlavi">
+            <option value="1">Muž</option>
+            <option value="0">Žena</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Kreatinin</label>
+        <div class="unit"><input type="number" id="cg-krea" placeholder="80"><span>µmol/l</span></div>
+      </div>
+      <button class="btn-calc" onclick="calcCG()">Vypočítat</button>
+      <div class="result" id="cg-result">
+        <div>
+          <div class="result-label">ClCr (C-G)</div>
+          <div class="result-note" id="cg-note"></div>
+        </div>
+        <div class="result-value muted" id="cg-val">—</div>
+      </div>
+
+      <div class="copy-row"><button class="btn-copy-result" id="cg-copy-btn" onclick="copyResult('cg', 'ClCr (C-G)')">⎘ Kopírovat</button></div>
+    </div>
+  </div>
+
+  <!-- ═══ 2. Korigované Ca ═══ -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon">🧪</div>
+      <div>
+        <div class="card-title">Korigované kalcium</div>
+        <div class="card-subtitle">Korekce na albumin</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="field">
+        <label>Kalcium (Ca)</label>
+        <div class="unit"><input type="number" id="ca-ca" placeholder="2.46" step="0.01"><span>mmol/l</span></div>
+      </div>
+      <div class="field">
+        <label>Albumin</label>
+        <div class="unit"><input type="number" id="ca-alb" placeholder="40" step="0.1"><span>g/l</span></div>
+      </div>
+      <button class="btn-calc" onclick="calcCa()">Vypočítat</button>
+      <div class="result" id="ca-result">
+        <div>
+          <div class="result-label">Korigované Ca</div>
+          <div class="result-note">Ca + 0,02 × (40 − Albumin)</div>
+        </div>
+        <div class="result-value muted" id="ca-val">—</div>
+      </div>
+
+      <div class="copy-row"><button class="btn-copy-result" id="ca-copy-btn" onclick="copyResult('ca', 'Kor. Ca')">⎘ Kopírovat</button></div>
+    </div>
+  </div>
+
+  <!-- ═══ 3. Albumin z ELFO ═══ -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon">📊</div>
+      <div>
+        <div class="card-title">Albumin z ELFO</div>
+        <div class="card-subtitle">Elektroforéza bílkovin</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="field">
+        <label>Celková bílkovina</label>
+        <div class="unit"><input type="number" id="elfo-tp" placeholder="70" step="0.1"><span>g/l</span></div>
+      </div>
+      <div class="field">
+        <label>Albumin (frakce z ELFO)</label>
+        <div class="unit"><input type="number" id="elfo-frakce" placeholder="0.65" step="0.001" max="1"><span>poměr (0–1)</span></div>
+      </div>
+      <button class="btn-calc" onclick="calcElfo()">Vypočítat</button>
+      <div class="result" id="elfo-result">
+        <div>
+          <div class="result-label">Albumin z ELFO</div>
+          <div class="result-note">Celk. bílkovina × frakce</div>
+        </div>
+        <div class="result-value muted" id="elfo-val">—</div>
+      </div>
+
+      <div class="copy-row"><button class="btn-copy-result" id="elfo-copy-btn" onclick="copyResult('elfo', 'Albumin ELFO')">⎘ Kopírovat</button></div>
+    </div>
+  </div>
+
+  <!-- ═══ 4. QTcF ═══ -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon">♥</div>
+      <div>
+        <div class="card-title">Korig. QT interval</div>
+        <div class="card-subtitle">Fridericiova korekce (QTcF)</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="row2">
+        <div class="field">
+          <label>QT interval</label>
+          <div class="unit"><input type="number" id="qt-qt" placeholder="420"><span>ms</span></div>
+        </div>
+        <div class="field">
+          <label>Tepová frekvence</label>
+          <div class="unit"><input type="number" id="qt-tf" placeholder="70"><span>/min</span></div>
+        </div>
+      </div>
+      <button class="btn-calc" onclick="calcQTcF()">Vypočítat</button>
+      <div class="result" id="qt-result">
+        <div>
+          <div class="result-label">QTcF</div>
+          <div class="result-note" id="qt-note">QT / RR^(1/3)</div>
+        </div>
+        <div class="result-value muted" id="qt-val">—</div>
+      </div>
+
+      <div class="copy-row"><button class="btn-copy-result" id="qt-copy-btn" onclick="copyResult('qt', 'QTcF')">⎘ Kopírovat</button></div>
+    </div>
+  </div>
+
+  <!-- ═══ 5. RR interval ═══ -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon">〜</div>
+      <div>
+        <div class="card-title">RR interval</div>
+        <div class="card-subtitle">Z tepové frekvence</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="field">
+        <label>Tepová frekvence</label>
+        <div class="unit"><input type="number" id="rr-tf" placeholder="70"><span>/min</span></div>
+      </div>
+      <button class="btn-calc" onclick="calcRR()">Vypočítat</button>
+      <div class="result" id="rr-result">
+        <div>
+          <div class="result-label">RR interval</div>
+          <div class="result-note">60 000 / TF</div>
+        </div>
+        <div class="result-value muted" id="rr-val">—</div>
+      </div>
+      <div class="copy-row"><button class="btn-copy-result" id="rr-copy-btn" onclick="copyResult('rr', 'RR interval')">⎘ Kopírovat</button></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── HELPERS ────────────────────────────────────────────────────
+function setResult(valId, value, unit, cls) {
+  const el = document.getElementById(valId);
+  el.className = 'result-value ' + (cls || '');
+  el.innerHTML = value !== null
+    ? `${value}<span class="result-unit">${unit || ''}</span>`
+    : '<span class="muted">—</span>';
+  el.classList.add('pop');
+  setTimeout(() => el.classList.remove('pop'), 300);
+}
+
+function v(id) { return parseFloat(document.getElementById(id).value); }
+function s(id) { return document.getElementById(id).value; }
+
+// ── 1. COCKCROFT-GAULT ─────────────────────────────────────────
+function calcCG() {
+  const dobRaw = s('cg-dob').trim();
+  const vaha   = v('cg-vaha');
+  const krea   = v('cg-krea');
+  const male   = parseInt(s('cg-pohlavi'));
+
+  if (!dobRaw || isNaN(vaha) || isNaN(krea)) {
+    setResult('cg-val', null, '', 'muted');
+    return;
+  }
+
+  // Parse dd.m.yyyy or dd. m. yyyy or yyyy-mm-dd
+  let narozen;
+  const dotMatch = dobRaw.match(/^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})$/);
+  const isoMatch = dobRaw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dotMatch) {
+    narozen = new Date(parseInt(dotMatch[3]), parseInt(dotMatch[2]) - 1, parseInt(dotMatch[1]));
+  } else if (isoMatch) {
+    narozen = new Date(parseInt(isoMatch[1]), parseInt(isoMatch[2]) - 1, parseInt(isoMatch[3]));
+  } else {
+    document.getElementById('cg-note').textContent = 'Neplatný formát data (použijte 14.3.1949)';
+    setResult('cg-val', null, '', 'muted');
+    return;
+  }
+
+  const dnes = new Date();
+  let vek = dnes.getFullYear() - narozen.getFullYear();
+  const m = dnes.getMonth() - narozen.getMonth();
+  if (m < 0 || (m === 0 && dnes.getDate() < narozen.getDate())) vek--;
+
+  // CG: ((140 - věk) × váha) / (0.815 × kreatinin) × korekce pohlaví
+  let clcr = ((140 - vek) * vaha) / (0.8144 * krea);
+  if (!male) clcr *= 0.85;
+
+  const rounded = Math.round(clcr * 10) / 10;
+  let cls = 'accent';
+  if (rounded < 30) cls = 'danger';
+  else if (rounded < 60) cls = 'warn';
+
+  document.getElementById('cg-note').textContent = `Věk: ${vek} let`;
+  setResult('cg-val', rounded, 'ml/min', cls);
+}
+
+// ── 2. KORIGOVANÉ Ca ───────────────────────────────────────────
+function calcCa() {
+  const ca  = v('ca-ca');
+  const alb = v('ca-alb');
+  if (isNaN(ca) || isNaN(alb)) { setResult('ca-val', null, '', 'muted'); return; }
+
+  const korCa = ca + 0.02 * (40 - alb);
+  const rounded = Math.round(korCa * 100) / 100;
+
+  let cls = '';
+  if (rounded > 2.75) cls = 'danger';
+  else if (rounded > 2.6) cls = 'warn';
+
+  setResult('ca-val', rounded, 'mmol/l', cls);
+}
+
+// ── 3. ALBUMIN Z ELFO ──────────────────────────────────────────
+function calcElfo() {
+  const tp     = v('elfo-tp');
+  const frakce = v('elfo-frakce');
+  if (isNaN(tp) || isNaN(frakce)) { setResult('elfo-val', null, '', 'muted'); return; }
+
+  const alb = tp * frakce;
+  const rounded = Math.round(alb * 10) / 10;
+  setResult('elfo-val', rounded, 'g/l', '');
+}
+
+// ── 4. QTcF ────────────────────────────────────────────────────
+function calcQTcF() {
+  const qt = v('qt-qt');
+  const tf = v('qt-tf');
+  if (isNaN(qt) || isNaN(tf) || tf <= 0) { setResult('qt-val', null, '', 'muted'); return; }
+
+  const rr  = 60000 / tf;          // ms
+  const qtcf = qt / Math.pow(rr / 1000, 1/3);
+  const rounded = Math.round(qtcf);
+
+  let cls = '';
+  let note = `RR: ${Math.round(rr)} ms`;
+  if (rounded > 500) { cls = 'danger'; note += ' · Prodloužený QTcF!'; }
+  else if (rounded > 450) { cls = 'warn'; note += ' · Hraniční QTcF'; }
+
+  document.getElementById('qt-note').textContent = note;
+  setResult('qt-val', rounded, 'ms', cls);
+}
+
+// ── 5. RR INTERVAL ─────────────────────────────────────────────
+function calcRR() {
+  const tf = v('rr-tf');
+  if (isNaN(tf) || tf <= 0) { setResult('rr-val', null, '', 'muted'); return; }
+
+  const rr = Math.round(60000 / tf);
+  setResult('rr-val', rr, 'ms', '');
+}
+
+// ── COPY RESULT ────────────────────────────────────────────────
+const COPY_LABELS = {
+  cg:   'ClCr (Cockcroft–Gault)',
+  ca:   'Korigované Ca',
+  elfo: 'Albumin z ELFO',
+  qt:   'QTcF',
+  rr:   'RR interval',
+};
+const COPY_UNITS = {
+  cg:   'ml/min',
+  ca:   'mmol/l',
+  elfo: 'g/l',
+  qt:   'ms',
+  rr:   'ms',
+};
+
+function copyResult(prefix, label) {
+  const valEl = document.getElementById(prefix + '-val');
+  const btn   = document.getElementById(prefix + '-copy-btn');
+  if (!valEl) return;
+
+  // Extract numeric value only (strip unit span)
+  const clone = valEl.cloneNode(true);
+  clone.querySelectorAll('.result-unit').forEach(el => el.remove());
+  const value = clone.innerText.trim();
+  if (!value || value === '—') return;
+
+  const fullLabel = COPY_LABELS[prefix] || label;
+  const unit      = COPY_UNITS[prefix]  || '';
+  const text      = `${fullLabel}: ${value} ${unit}`.trim();
+
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Zkopírováno';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = '⎘ Kopírovat';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+// ── AUTO-CALC ON ENTER ─────────────────────────────────────────
+document.querySelectorAll('input').forEach(inp => {
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const card = inp.closest('.card');
+      card.querySelector('.btn-calc').click();
+    }
+  });
+});
+</script>
+</body>
+</html>

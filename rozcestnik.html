@@ -13,15 +13,16 @@ const CONFIG = {
 
   // Nadpis a podnadpis
   title: "Odkazy",
+  subtitle: "",
 
   // Barevné téma (změň dle libosti)
   theme: {
-    bg:      "#0f0f13",       // Barva pozadí
-    surface: "#18181f",       // Barva karet
-    border:  "#2a2a38",       // Okraje
-    accent:  "#7c6af7",       // Hlavní barva
-    text:    "#e8e6f0",       // Text
-    muted:   "#6b6880",       // Tlumený text
+    bg:      "#0f0f13",
+    surface: "#18181f",
+    border:  "#2a2a38",
+    accent:  "#7c6af7",
+    text:    "#e8e6f0",
+    muted:   "#6b6880",
   },
 
   // ── SEKCE A ODKAZY ──────────────────────────────────────────
@@ -29,29 +30,29 @@ const CONFIG = {
     {
       name: "🔥 CLL",
       links: [
-        { label: "IWCLL Response",  url: "https://htmlpreview.github.io/?https://github.com/simkovicm/CLL-response/blob/main/index.html",  icon: "✦" },
-        { label: "Rozpis chemoterapie",  url: "https://htmlpreview.github.io/?https://github.com/simkovicm/rozcestnik/blob/main/lecba-generator_v1.html",  icon: "♘" }
+        { label: "IWCLL Response",        url: "https://htmlpreview.github.io/?https://github.com/simkovicm/CLL-response/blob/main/index.html",                                                                    icon: "✦" },
+        { label: "Rozpis chemoterapie",   url: "https://htmlpreview.github.io/?https://github.com/simkovicm/rozcestnik/blob/main/lecba-generator_v1.html",                                                        icon: "♘" }
       ]
     },
     {
       name: "📰 Ostatní",
       links: [
-        { label: "Faktury",  url: "https://htmlpreview.github.io/?https://github.com/simkovicm/rozcestnik/blob/b487935d2742a8efc00b108f68f4efb41e4f3780/faktura-generator%20(2).html",   icon: "◉" },
-        { label: "GitHub",    url: "https://github.com/simkovicm/rozcestnik",     icon: "𖢥" },
-        { label: "BBC",      url: "https://bbc.com",      icon: "◉" }
+        { label: "Faktury",  url: "https://htmlpreview.github.io/?https://github.com/simkovicm/rozcestnik/blob/b487935d2742a8efc00b108f68f4efb41e4f3780/faktura-generator%20(2).html", icon: "◉" },
+        { label: "GitHub",   url: "https://github.com/simkovicm/rozcestnik",                                                                                                           icon: "𖢥" },
+        { label: "BBC",      url: "https://bbc.com",                                                                                                                                   icon: "◉" }
       ]
     },
     {
       name: "🛠️ Práce",
       links: [
-        { label: "Gmail",    url: "https://mail.google.com",   icon: "✉" },
-        { label: "Drive",    url: "https://drive.google.com",  icon: "△" },
+        { label: "Gmail",  url: "https://mail.google.com",  icon: "✉" },
+        { label: "Drive",  url: "https://drive.google.com", icon: "△" },
       ]
     },
     {
       name: "🎮 Ostatní",
       links: [
-        { label: "Spotify",  url: "https://spotify.com",  icon: "◎" },
+        { label: "Spotify", url: "https://spotify.com", icon: "◎" },
       ]
     },
   ]
@@ -108,14 +109,11 @@ const CONFIG = {
     opacity: .85;
   }
 
-h1 {
-  font-size: clamp(1.2rem, 3vw, 1.8rem);
-  font-weight: 600;
-  letter-spacing: -.01em;   /* volitelně — původní -.03em je dost výrazné */
+  h1 {
+    font-size: clamp(1.2rem, 3vw, 1.8rem);
+    font-weight: 600;
+    letter-spacing: -.01em;
   }
-
-
-
 
   /* ── GRID ── */
   .grid {
@@ -205,8 +203,6 @@ h1 {
   <h1 id="title"></h1>
 </header>
 
-
-
 <main class="grid" id="grid"></main>
 
 <p class="clock" id="clock"></p>
@@ -223,7 +219,7 @@ h1 {
 
   // Nadpis
   document.getElementById('title').textContent    = CONFIG.title;
-  document.getElementById('subtitle').textContent = CONFIG.subtitle;
+  document.getElementById('subtitle').textContent = CONFIG.subtitle || '';
 
   // Vykresli sekce
   const grid = document.getElementById('grid');
@@ -254,6 +250,12 @@ h1 {
     grid.appendChild(div);
   });
 
+  // Hodiny
+  function updateClock() {
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString('cs-CZ');
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
 </script>
 </body>
 </html>

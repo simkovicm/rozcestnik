@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generátor léčebných informací</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f0f2f5;
+  --sidebar: #1e2030;
+  --sidebar-fg: #cdd6f4;
+  --sidebar-muted: #6c7086;
+  --sidebar-accent: #89b4fa;
+  --sidebar-input: rgba(255,255,255,0.07);
+  --sidebar-border: rgba(255,255,255,0.1);
+  --white: #ffffff;
+  --black: #111111;
+  --gray: #555;
+  --light: #888;
+  --border: #ddd;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Source Sans 3', sans-serif;
+  background: var(--bg);
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  min-height: 100vh;
+}
+
+/* ═══ SIDEBAR ═══ */
+.sidebar {
+  background: var(--sidebar);
+  color: var(--sidebar-fg);
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+  padding: 28px 22px 24px;
+  scrollbar-width: thin;
+  scrollbar-color: #313244 transparent;
+}
+.logo {
+  font-family: 'Source Serif 4', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 2px;
+}
+.logo span { color: var(--sidebar-accent); }
+.logo-sub {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--sidebar-muted);
+  margin-bottom: 24px;
+}
+
+.protocol-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.ptab {
+  padding: 6px 12px;
+  border: 1px solid var(--sidebar-border);
+  background: transparent;
+  color: var(--sidebar-muted);
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ptab.active {
+  background: var(--sidebar-accent);
+  border-color: var(--sidebar-accent);
+  color: #1e2030;
+}
+.ptab:not(.active):hover { color: var(--sidebar-fg); border-color: var(--sidebar-fg); }
+
+.sec-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--sidebar-muted);
+  margin: 18px 0 10px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.field { margin-bottom: 10px; }
+.field label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--sidebar-muted);
+  margin-bottom: 4px;
+}
+.field input, .field select, .field textarea {
+  width: 100%;
+  background: var(--sidebar-input);
+  border: 1px solid var(--sidebar-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--sidebar-fg);
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--sidebar-accent);
+}
+.field select option { background: #2a2a3e; }
+.field textarea { resize: vertical; min-height: 60px; line-height: 1.5; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.btn-generate {
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px;
+  background: var(--sidebar-accent);
+  color: #1e2030;
+  border: none;
+  border-radius: 7px;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-generate:hover { background: #74c7ec; transform: translateY(-1px); }
+
+/* toggle switches */
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+.toggle-label {
+  font-size: 12px;
+  color: var(--sidebar-fg);
+}
+.toggle {
+  position: relative;
+  width: 36px; height: 20px;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,0.15);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.slider:before {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  left: 3px; top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+input:checked + .slider { background: var(--sidebar-accent); }
+input:checked + .slider:before { transform: translateX(16px); }
+
+/* ═══ PREVIEW ═══ */
+.preview {
+  padding: 36px 40px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.preview-empty {
+  margin: auto;
+  text-align: center;
+  color: #aaa;
+}
+.preview-empty-icon { font-size: 44px; opacity: 0.3; margin-bottom: 12px; }
+.preview-empty h2 {
+  font-family: 'Source Serif 4', serif;
+  font-size: 20px;
+  font-weight: 400;
+  opacity: 0.45;
+  margin-bottom: 6px;
+}
+.preview-empty p { font-size: 12px; opacity: 0.4; }
+
+/* OUTPUT CARD */
+.output-card {
+  background: var(--white);
+  width: 100%;
+  max-width: 680px;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+  animation: fadeUp 0.2s ease;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card-toolbar {
+  background: #1e2030;
+  padding: 8px 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+.btn-copy {
+  padding: 5px 14px;
+  background: rgba(137,180,250,0.15);
+  border: 1px solid rgba(137,180,250,0.3);
+  border-radius: 5px;
+  color: #89b4fa;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-copy:hover { background: rgba(137,180,250,0.25); }
+.btn-copy.copied { background: rgba(166,227,161,0.2); color: #a6e3a1; border-color: rgba(166,227,161,0.3); }
+
+/* Dokument samotný */
+.inv-doc {
+  padding: 36px 44px 44px;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #000;
+}
+.inv-doc .doc-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+.inv-doc hr.doc-rule {
+  border: none;
+  border-top: 1px solid #000;
+  margin: 0 0 24px;
+}
+.inv-doc hr.doc-rule-bottom {
+  border: none;
+  border-top: 1px solid #000;
+  margin: 28px 0 0;
+}
+.inv-doc .doc-section-head {
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+.inv-doc .doc-med {
+  margin-bottom: 14px;
+}
+.inv-doc .doc-med-line1 { display: block; }
+.inv-doc .doc-med-line2 { display: block; }
+.inv-doc .doc-rezim-head {
+  font-weight: 700;
+  margin-top: 18px;
+  margin-bottom: 3px;
+}
+.inv-doc .doc-rezim-p { margin: 0; line-height: 1.65; }
+
+@media print {
+  .sidebar { display: none; }
+  body { display: block; }
+  .preview { padding: 0; }
+  .card-toolbar { display: none; }
+  .output-card { box-shadow: none; max-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar">
+  <div class="logo">Onko<span>Text</span></div>
+  <div class="logo-sub">Generátor léčebných informací</div>
+
+  <!-- PROTOKOLY -->
+  <div class="sec-label">Protokol</div>
+  <div class="protocol-tabs">
+    <button class="ptab active" onclick="selectProtocol('rchop', this)">R-CHOP</button>
+    <button class="ptab" onclick="selectProtocol('rcop', this)">R-COP</button>
+    <button class="ptab" onclick="selectProtocol('custom', this)">Vlastní</button>
+  </div>
+
+  <!-- PARAMETRY -->
+  <div id="params-rchop">
+    <div class="sec-label">Parametry</div>
+    <div class="field">
+      <label>Datum zahájení ambulantní léčby</label>
+      <input type="date" id="rchop-datum">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Cyklus č.</label>
+        <input type="number" id="rchop-cyklus" value="1" min="1" max="8">
+      </div>
+      <div class="field">
+        <label>Počet dní pred.</label>
+        <input type="number" id="rchop-dny" value="4" min="1" max="14">
+      </div>
+    </div>
+    <div class="field">
+      <label>Poznámka navíc (volitelné)</label>
+      <textarea id="rchop-poznamka" placeholder="Např. kontrola za 3 týdny…"></textarea>
+    </div>
+
+    <div class="sec-label">Možnosti</div>
+    <div class="toggle-row">
+      <span class="toggle-label">Zahrnout Kalnormin</span>
+      <label class="toggle"><input type="checkbox" id="opt-kalnormin" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Zahrnout Controloc</span>
+      <label class="toggle"><input type="checkbox" id="opt-controloc" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Zahrnout Zarzio</span>
+      <label class="toggle"><input type="checkbox" id="opt-zarzio" checked onchange="document.getElementById('zarzio-dny-wrap').style.display=this.checked?'block':'none'"><span class="slider"></span></label>
+    </div>
+    <div class="field" id="zarzio-dny-wrap">
+      <label>Počet dní Zarzio</label>
+      <input type="number" id="opt-zarzio-dny" value="4" min="1" max="14">
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Pokyn k dietě (bez cukru)</span>
+      <label class="toggle"><input type="checkbox" id="opt-dieta" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Granegis při nevolnosti</span>
+      <label class="toggle"><input type="checkbox" id="opt-granegis" checked><span class="slider"></span></label>
+    </div>
+  </div>
+
+  <div id="params-rcop" style="display:none;">
+    <div class="sec-label">Parametry</div>
+    <div class="field">
+      <label>Datum zahájení ambulantní léčby</label>
+      <input type="date" id="rcop-datum">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Cyklus č.</label>
+        <input type="number" id="rcop-cyklus" value="1" min="1" max="8">
+      </div>
+      <div class="field">
+        <label>Počet dní pred.</label>
+        <input type="number" id="rcop-dny" value="4" min="1" max="14">
+      </div>
+    </div>
+    <div class="field">
+      <label>Poznámka navíc (volitelné)</label>
+      <textarea id="rcop-poznamka" placeholder="Např. kontrola za 3 týdny…"></textarea>
+    </div>
+    <div class="sec-label">Možnosti</div>
+    <div class="toggle-row">
+      <span class="toggle-label">Zahrnout Kalnormin</span>
+      <label class="toggle"><input type="checkbox" id="rcop-kalnormin" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Zahrnout Helicid</span>
+      <label class="toggle"><input type="checkbox" id="rcop-helicid" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Pokyn k dietě (bez cukru)</span>
+      <label class="toggle"><input type="checkbox" id="rcop-dieta" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Granegis při nevolnosti</span>
+      <label class="toggle"><input type="checkbox" id="rcop-granegis" checked><span class="slider"></span></label>
+    </div>
+  </div>
+
+  <div id="params-custom" style="display:none;">
+    <div class="sec-label">Vlastní text</div>
+    <div class="field">
+      <label>Název léčby / záhlaví</label>
+      <input type="text" id="custom-nazev" placeholder="např. ABVD 2. cyklus">
+    </div>
+    <div class="field">
+      <label>Text (každý řádek = 1 řádek výstupu)</label>
+      <textarea id="custom-text" style="min-height:160px;" placeholder="Sem vložte libovolný text…"></textarea>
+    </div>
+  </div>
+
+  <button class="btn-generate" onclick="generate()">▶ Generovat text</button>
+</aside>
+
+<!-- ═══ PREVIEW ═══ -->
+<main class="preview" id="preview">
+  <div class="preview-empty" id="preview-empty">
+    <div class="preview-empty-icon">💊</div>
+    <h2>Zatím žádný výstup</h2>
+    <p>Vyberte protokol a klikněte Generovat</p>
+  </div>
+</main>
+
+<script>
+let currentProtocol = 'rchop';
+
+// ── DATE HELPERS ──
+function tomorrowStr() {
+  const d = new Date(); d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0,10);
+}
+function addDays(dateStr, n) {
+  const d = new Date(dateStr); d.setDate(d.getDate() + n - 1); return d;
+}
+function fmtCS(dateObj) {
+  return dateObj.toLocaleDateString('cs-CZ', { day:'numeric', month:'numeric', year:'numeric' });
+}
+function medLine(label, dateFrom, dateTo) {
+  return `${label}  užívat od ${fmtCS(new Date(dateFrom))} do ${fmtCS(addDays(dateFrom, dateTo))}, poté vysadit`;
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0,10);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const t = todayStr();
+  document.getElementById('rchop-datum').value = t;
+  document.getElementById('rcop-datum').value  = t;
+  document.getElementById('opt-zarzio-dny').value  = 5;
+  document.getElementById('pokr-zarzio-dny').value = 5;
+});
+
+function selectProtocol(name, btn) {
+  currentProtocol = name;
+  document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['rchop','rcop','custom'].forEach(p => {
+    document.getElementById('params-' + p).style.display = p === name ? 'block' : 'none';
+  });
+}
+
+function generate() {
+  let html = '';
+  let plain = '';
+  let title = '';
+
+  function fmtDatum(datum, dny) {
+    const od = fmtCS(new Date(datum));
+    const do_ = fmtCS(addDays(datum, dny));
+    return { od, do: do_ };
+  }
+
+  function buildProtocol(prefix) {
+    const isMain   = prefix === 'rchop';
+    const cyklus   = document.getElementById(isMain ? 'rchop-cyklus' : 'pokr-cyklus').value;
+    const dny      = parseInt(document.getElementById(isMain ? 'rchop-dny' : 'pokr-dny').value);
+    const datum    = document.getElementById(isMain ? 'rchop-datum' : 'pokr-datum').value;
+    const poznamka = document.getElementById(isMain ? 'rchop-poznamka' : 'pokr-poznamka').value.trim();
+    const kalnormin = document.getElementById(isMain ? 'opt-kalnormin' : 'pokr-kalnormin').checked;
+    const controloc = document.getElementById(isMain ? 'opt-controloc' : 'pokr-controloc').checked;
+    const zarzio    = document.getElementById(isMain ? 'opt-zarzio'    : 'pokr-zarzio').checked;
+    const zarzioDny = parseInt(document.getElementById(isMain ? 'opt-zarzio-dny' : 'pokr-zarzio-dny').value) || 4;
+    const dieta     = document.getElementById(isMain ? 'opt-dieta'     : 'pokr-dieta').checked;
+    const granegis  = document.getElementById(isMain ? 'opt-granegis'  : 'pokr-granegis').checked;
+
+    if (!datum) { alert('Vyplňte prosím datum zahájení ambulantní léčby.'); return null; }
+
+    const verb = isMain ? 'zahájen' : 'pokračování v';
+    const titleTxt = isMain
+      ? `Dne ${fmtCS(new Date())} zahájen ${cyklus}. cyklus chemoterapie R-CHOP dle CATO.`
+      : `Dnes pokračování v chemoterapii R-CHOP ${cyklus}. cyklus dle CATO.`;
+
+    const dt  = fmtDatum(datum, dny);
+    const dtz = fmtDatum(datum, zarzioDny);
+
+    // --- HTML ---
+    let h = '';
+    h += `<p class="doc-title">${titleTxt}</p>`;
+    h += `<hr class="doc-rule">`;
+    h += `<p class="doc-section-head">Dokončení chemoimunoterapie ambulantně:</p>`;
+
+    function medHtml(name, dose, od, do_) {
+      return `<div class="doc-med">
+        <span class="doc-med-line1"><strong>${name}</strong> ${dose}</span>
+        <span class="doc-med-line2">užívat <strong>${od} – ${do_}</strong>, poté vysadit.</span>
+      </div>`;
+    }
+
+    h += medHtml('Prednison 20 mg', '3-2-0 (ráno-poledne-večer)', dt.od, dt.do);
+    if (kalnormin) h += medHtml('Kalnormin 1 tbl', '1-0-1', dt.od, dt.do);
+    if (controloc) h += medHtml('Controloc 40 mg', '1-0-0', dt.od, dt.do);
+    if (zarzio)    h += medHtml('Zarzio', '0,5 ml/48 MU 1-0-0<br>podkožní injekcí', dtz.od, dtz.do);
+
+    if (dieta || granegis) {
+      h += `<p class="doc-rezim-head">Režimová doporučení:</p>`;
+      h += `<p class="doc-rezim-p">`;
+      if (dieta)    h += `V uvedených dnech vynechat sladká jídla a sladké nápoje.<br>`;
+      if (granegis) h += `Při nevolnosti lze užít <strong>Granegis 2 mg p.o., 1 tabletu</strong>.`;
+      h += `</p>`;
+    }
+    if (poznamka) {
+      h += `<p style="margin-top:14px;">${poznamka}</p>`;
+    }
+
+    h += `<hr class="doc-rule-bottom">`;
+
+    // --- PLAIN ---
+    let p = '';
+    p += titleTxt + '\n\n';
+    p += 'Dokončení chemoimunoterapie ambulantně:\n\n';
+    p += `Prednison 20 mg 3-2-0 (ráno-poledne-večer)\nužívat ${dt.od} – ${dt.do}, poté vysadit.\n\n`;
+    if (kalnormin) p += `Kalnormin 1 tbl 1-0-1\nužívat ${dt.od} – ${dt.do}, poté vysadit.\n\n`;
+    if (controloc) p += `Controloc 40 mg 1-0-0\nužívat ${dt.od} – ${dt.do}, poté vysadit.\n\n`;
+    if (zarzio)    p += `Zarzio 0,5 ml/48 MU 1-0-0\npodkožní injekcí užívat ${dtz.od} – ${dtz.do}, poté vysadit.\n\n`;
+    if (dieta || granegis) {
+      p += 'Režimová doporučení:\n';
+      if (dieta)    p += 'V uvedených dnech vynechat sladká jídla a sladké nápoje.\n';
+      if (granegis) p += 'Při nevolnosti lze užít Granegis 2 mg p.o., 1 tabletu.\n';
+    }
+    if (poznamka) p += '\n' + poznamka;
+
+    return { h, p };
+  }
+
+  if (currentProtocol === 'rchop') {
+    const r = buildProtocol('rchop');
+    if (!r) return;
+    html = r.h; plain = r.p;
+
+  } else if (currentProtocol === 'rchop_pokr') {
+    const r = buildProtocol('pokr');
+    if (!r) return;
+    html = r.h; plain = r.p;
+
+  } else if (currentProtocol === 'rcop') {
+    const cyklus   = document.getElementById('rcop-cyklus').value;
+    const dny      = parseInt(document.getElementById('rcop-dny').value);
+    const datum    = document.getElementById('rcop-datum').value;
+    const poznamka = document.getElementById('rcop-poznamka').value.trim();
+    const kalnormin = document.getElementById('rcop-kalnormin').checked;
+    const helicid   = document.getElementById('rcop-helicid').checked;
+    const dieta     = document.getElementById('rcop-dieta').checked;
+    const granegis  = document.getElementById('rcop-granegis').checked;
+
+    if (!datum) { alert('Vyplňte prosím datum zahájení ambulantní léčby.'); return; }
+
+    const dt = fmtDatum(datum, dny);
+    const titleTxt = `Dne ${fmtCS(new Date())} zahájen ${cyklus}. cyklus chemoterapie R-COP dle CATO.`;
+
+    let h = '';
+    h += `<p class="doc-title">${titleTxt}</p>`;
+    h += `<hr class="doc-rule">`;
+    h += `<p class="doc-section-head">Dokončení chemoimunoterapie ambulantně:</p>`;
+
+    function medHtml(name, dose, od, do_) {
+      return `<div class="doc-med">
+        <span class="doc-med-line1"><strong>${name}</strong> ${dose}</span>
+        <span class="doc-med-line2">užívat <strong>${od} – ${do_}</strong>, poté vysadit.</span>
+      </div>`;
+    }
+
+    h += medHtml('Prednison 20 mg', '3-0-0 (ráno)', dt.od, dt.do);
+    if (kalnormin) h += medHtml('Kalnormin 1 tbl', '1-0-1', dt.od, dt.do);
+    if (helicid)   h += medHtml('Helicid 20 mg', '1-0-0', dt.od, dt.do);
+
+    if (dieta || granegis) {
+      h += `<p class="doc-rezim-head">Režimová doporučení:</p>`;
+      h += `<p class="doc-rezim-p">`;
+      if (dieta)    h += `V uvedených dnech vynechat sladká jídla a sladké nápoje.<br>`;
+      if (granegis) h += `Při nevolnosti lze užít <strong>Granegis 2 mg p.o., 1 tabletu</strong>.`;
+      h += `</p>`;
+    }
+    if (poznamka) h += `<p style="margin-top:14px;">${poznamka}</p>`;
+    h += `<hr class="doc-rule-bottom">`;
+
+    let p = '';
+    p += titleTxt + '\n\n';
+    p += 'Dokončení chemoimunoterapie ambulantně:\n\n';
+    p += `Prednison 20 mg 3-0-0 (ráno)\nužívat ${dt.od} – ${dt.do}, poté vysadit.\n\n`;
+    if (kalnormin) p += `Kalnormin 1 tbl 1-0-1\nužívat ${dt.od} – ${dt.do}, poté vysadit.\n\n`;
+    if (helicid)   p += `Helicid 20 mg 1-0-0\nužívat ${dt.od} – ${dt.do}, poté vysadit.\n\n`;
+    if (dieta || granegis) {
+      p += 'Režimová doporučení:\n';
+      if (dieta)    p += 'V uvedených dnech vynechat sladká jídla a sladké nápoje.\n';
+      if (granegis) p += 'Při nevolnosti lze užít Granegis 2 mg p.o., 1 tabletu.\n';
+    }
+    if (poznamka) p += '\n' + poznamka;
+
+    html = h; plain = p;
+
+  } else if (currentProtocol === 'custom') {
+    title = document.getElementById('custom-nazev').value.trim() || 'Vlastní text';
+    plain = document.getElementById('custom-text').value.trim();
+    if (!plain) { alert('Vyplňte prosím vlastní text.'); return; }
+    html = `<p class="doc-title">${title}</p><hr class="doc-rule"><p style="white-space:pre-wrap;">${plain}</p><hr class="doc-rule-bottom">`;
+  }
+
+  renderOutput(title, html, plain);
+}
+
+function renderOutput(title, html, plainText) {
+  document.getElementById('preview-empty').style.display = 'none';
+  const ex = document.getElementById('output-card');
+  if (ex) ex.remove();
+
+  const card = document.createElement('div');
+  card.className = 'output-card';
+  card.id = 'output-card';
+  card.dataset.plain = plainText;
+
+  card.innerHTML = `
+    <div class="card-toolbar">
+      <button class="btn-copy" id="copy-btn" onclick="copyText()">⎘ Kopírovat text</button>
+    </div>
+    <div class="inv-doc" id="output-text-content">${html}</div>
+  `;
+
+  document.getElementById('preview').appendChild(card);
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function copyText() {
+  const card = document.getElementById('output-card');
+  if (!card) return;
+  const plain = card.dataset.plain || '';
+  navigator.clipboard.writeText(plain).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Zkopírováno';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '⎘ Kopírovat text';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+</script>
+</body>
+</html>

@@ -146,14 +146,12 @@ input:checked + .slider:before { transform: translateX(16px); }
     <div class="field"><label>Datum zahájení ambulantní léčby</label><input type="date" id="rchop-datum"></div>
     <div class="row2">
       <div class="field"><label>Cyklus č.</label><input type="number" id="rchop-cyklus" value="1" min="1" max="8"></div>
-      <div class="field"><label>Počet dní pred.</label><input type="number" id="rchop-dny" value="4" min="1" max="14"></div>
     </div>
     <div class="field"><label>Poznámka (volitelné)</label><textarea id="rchop-poznamka" placeholder="Např. kontrola za 3 týdny…"></textarea></div>
     <div class="sec-label">Možnosti</div>
     <div class="toggle-row"><span class="toggle-label">Zahrnout Kalnormin</span><label class="toggle"><input type="checkbox" id="opt-kalnormin" checked><span class="slider"></span></label></div>
     <div class="toggle-row"><span class="toggle-label">Zahrnout Controloc</span><label class="toggle"><input type="checkbox" id="opt-controloc" checked><span class="slider"></span></label></div>
-    <div class="toggle-row"><span class="toggle-label">Zahrnout Zarzio</span><label class="toggle"><input type="checkbox" id="opt-zarzio" checked onchange="document.getElementById('zarzio-dny-wrap').style.display=this.checked?'block':'none'"><span class="slider"></span></label></div>
-    <div class="field" id="zarzio-dny-wrap"><label>Počet dní Zarzio</label><input type="number" id="opt-zarzio-dny" value="5" min="1" max="14"></div>
+    <div class="toggle-row"><span class="toggle-label">Zahrnout Zarzio</span><label class="toggle"><input type="checkbox" id="opt-zarzio" checked><span class="slider"></span></label></div>
     <div class="toggle-row"><span class="toggle-label">Pokyn k dietě (bez cukru)</span><label class="toggle"><input type="checkbox" id="opt-dieta" checked><span class="slider"></span></label></div>
     <div class="toggle-row"><span class="toggle-label">Granegis při nevolnosti</span><label class="toggle"><input type="checkbox" id="opt-granegis" checked><span class="slider"></span></label></div>
   </div>
@@ -164,7 +162,6 @@ input:checked + .slider:before { transform: translateX(16px); }
     <div class="field"><label>Datum zahájení ambulantní léčby</label><input type="date" id="rcop-datum"></div>
     <div class="row2">
       <div class="field"><label>Cyklus č.</label><input type="number" id="rcop-cyklus" value="1" min="1" max="8"></div>
-      <div class="field"><label>Počet dní pred.</label><input type="number" id="rcop-dny" value="4" min="1" max="14"></div>
     </div>
     <div class="field"><label>Poznámka (volitelné)</label><textarea id="rcop-poznamka" placeholder="Např. kontrola za 3 týdny…"></textarea></div>
     <div class="sec-label">Možnosti</div>
@@ -216,8 +213,24 @@ let currentProtocol = 'rchop';
 let storedClipboardHTML = '';
 
 function todayStr() { return new Date().toISOString().slice(0,10); }
-function addDays(dateStr, n) { const d = new Date(dateStr); d.setDate(d.getDate() + n - 1); return d; }
-function fmtCS(d) { return d.toLocaleDateString('cs-CZ', { day:'numeric', month:'numeric', year:'numeric' }); }
+
+// Přidá n dní k datovému řetězci (YYYY-MM-DD) – bez -1 korekce
+function shiftDate(dateStr, n) {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+// Přidá n dní a vrátí poslední den trvání (start + n - 1)
+function rangeEnd(dateStr, n) {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + n - 1);
+  return d;
+}
+
+function fmtCS(d) {
+  return d.toLocaleDateString('cs-CZ', { day:'numeric', month:'numeric', year:'numeric' });
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   const t = todayStr();
@@ -236,7 +249,6 @@ function selectProtocol(name, btn) {
   });
 }
 
-// Sestaví HTML tabulku – jednou pro náhled (s CSS třídami), jednou pro clipboard (inline styly)
 function buildRows(rows, poznamka, inline, lastColHeader) {
   lastColHeader = lastColHeader || 'Vysadit po';
 
@@ -306,27 +318,34 @@ function generate() {
   if (currentProtocol === 'rchop') {
     const datum     = document.getElementById('rchop-datum').value;
     const cyklus    = document.getElementById('rchop-cyklus').value;
-    const dny       = parseInt(document.getElementById('rchop-dny').value);
     poznamka        = document.getElementById('rchop-poznamka').value.trim();
     const kalnormin = document.getElementById('opt-kalnormin').checked;
     const controloc = document.getElementById('opt-controloc').checked;
     const zarzio    = document.getElementById('opt-zarzio').checked;
-    const zarzioDny = parseInt(document.getElementById('opt-zarzio-dny').value) || 5;
     const dieta     = document.getElementById('opt-dieta').checked;
     const granegis  = document.getElementById('opt-granegis').checked;
 
     if (!datum) { alert('Vyplňte datum zahájení.'); return; }
 
     titleTxt = `Dne ${fmtCS(new Date())} zahájen ${cyklus}. cyklus chemoterapie R-CHOP dle CATO.`;
-    const od  = fmtCS(new Date(datum));
-    const do_ = fmtCS(addDays(datum, dny));
-    const doz = fmtCS(addDays(datum, zarzioDny));
+
+    // Prednison, Kalnormin, Controloc: od datum+1, na 4 dny (datum+1 až datum+4)
+    const predOd  = shiftDate(datum, 1);
+    const predDo  = rangeEnd(predOd.toISOString().slice(0,10), 4);
+    const odStr   = fmtCS(predOd);
+    const doStr   = fmtCS(predDo);
+
+    // Zarzio: od datum+5, na 5 dní (datum+5 až datum+9)
+    const zarzioOd  = shiftDate(datum, 5);
+    const zarzioDo  = rangeEnd(zarzioOd.toISOString().slice(0,10), 5);
+    const zarzioOdStr = fmtCS(zarzioOd);
+    const zarzioDoStr = fmtCS(zarzioDo);
 
     rows.push({ section: 'Dokončení chemoimunoterapie ambulantně' });
-    rows.push({ name: 'Prednison 20 mg',        dose: '3-2-0 (ráno-poledne-večer)', od, do_ });
-    if (kalnormin) rows.push({ name: 'Kalnormin 1 tbl',       dose: '1-0-1',                    od, do_ });
-    if (controloc) rows.push({ name: 'Controloc 40 mg',       dose: '1-0-0',                    od, do_ });
-    if (zarzio)    rows.push({ name: 'Zarzio 0,5 ml / 48 MU', dose: '1-0-0 podkožní injekcí',   od, do_: doz });
+    rows.push({ name: 'Prednison 20 mg',        dose: '3-2-0 (ráno-poledne-večer)', od: odStr, do_: doStr });
+    if (kalnormin) rows.push({ name: 'Kalnormin 1 tbl',       dose: '1-0-1',                    od: odStr, do_: doStr });
+    if (controloc) rows.push({ name: 'Controloc 40 mg',       dose: '1-0-0',                    od: odStr, do_: doStr });
+    if (zarzio)    rows.push({ name: 'Zarzio 0,5 ml / 48 MU', dose: '1-0-0 podkožní injekcí',   od: zarzioOdStr, do_: zarzioDoStr });
 
     if (dieta || granegis) {
       rows.push({ section: 'Režimová doporučení' });
@@ -337,7 +356,6 @@ function generate() {
   } else if (currentProtocol === 'rcop') {
     const datum     = document.getElementById('rcop-datum').value;
     const cyklus    = document.getElementById('rcop-cyklus').value;
-    const dny       = parseInt(document.getElementById('rcop-dny').value);
     poznamka        = document.getElementById('rcop-poznamka').value.trim();
     const kalnormin = document.getElementById('rcop-kalnormin').checked;
     const helicid   = document.getElementById('rcop-helicid').checked;
@@ -347,13 +365,17 @@ function generate() {
     if (!datum) { alert('Vyplňte datum zahájení.'); return; }
 
     titleTxt = `Dne ${fmtCS(new Date())} zahájen ${cyklus}. cyklus chemoterapie R-COP dle CATO.`;
-    const od  = fmtCS(new Date(datum));
-    const do_ = fmtCS(addDays(datum, dny));
+
+    // Prednison, Kalnormin, Helicid: od datum+1, na 4 dny
+    const predOd = shiftDate(datum, 1);
+    const predDo = rangeEnd(predOd.toISOString().slice(0,10), 4);
+    const odStr  = fmtCS(predOd);
+    const doStr  = fmtCS(predDo);
 
     rows.push({ section: 'Dokončení chemoimunoterapie ambulantně' });
-    rows.push({ name: 'Prednison 20 mg', dose: '3-0-0 (ráno)', od, do_ });
-    if (kalnormin) rows.push({ name: 'Kalnormin 1 tbl', dose: '1-0-1', od, do_ });
-    if (helicid)   rows.push({ name: 'Helicid 20 mg',   dose: '1-0-0', od, do_ });
+    rows.push({ name: 'Prednison 20 mg', dose: '3-0-0 (ráno)', od: odStr, do_: doStr });
+    if (kalnormin) rows.push({ name: 'Kalnormin 1 tbl', dose: '1-0-1', od: odStr, do_: doStr });
+    if (helicid)   rows.push({ name: 'Helicid 20 mg',   dose: '1-0-0', od: odStr, do_: doStr });
 
     if (dieta || granegis) {
       rows.push({ section: 'Režimová doporučení' });
@@ -421,10 +443,8 @@ function generate() {
   const lastColHeader = (currentProtocol === 'brukinsa' || currentProtocol === 'calquence') ? 'Délka podávání' : 'Vysadit po';
   const titleStyle = 'font-family:"Times New Roman",serif;font-size:14px;font-weight:bold;margin:0 0 16px 0;';
 
-  // Náhled (CSS třídy)
   const previewHTML = `<p class="doc-title">${titleTxt}</p>` + buildRows(rows, poznamka, false, lastColHeader);
 
-  // Clipboard (inline styly – funguje ve Wordu)
   storedClipboardHTML = `<html><body>
     <p style="${titleStyle}">${titleTxt}</p>
     ${buildRows(rows, poznamka, true, lastColHeader)}

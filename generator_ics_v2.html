@@ -417,12 +417,35 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         <button class="btn btn-primary" id="btnDownloadCombined">⬇ Společný ICS</button>
         <button class="btn btn-accent" id="btnDownloadPerPerson">⬇ Zvlášť pro každého</button>
       </div>
-      <div class="toggle-wrap">
-        <label class="toggle">
-          <input type="checkbox" id="onlyMD" checked>
-          <span class="slider"></span>
-        </label>
-        <span class="toggle-label">Pouze Šimkovič + Écsiová</span>
+      <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+        <a href="https://calendar.google.com/calendar/u/0/r/settings/export"
+           target="_blank" rel="noopener"
+           title="Importovat ICS do Google Kalendáře"
+           style="display:inline-flex; align-items:center; gap:8px;
+                  background:#fff; border:1.5px solid #E2E8F0;
+                  border-radius:8px; padding:9px 16px;
+                  font-family:'DM Sans',sans-serif; font-size:.88rem; font-weight:500;
+                  color:#334155; text-decoration:none;
+                  transition:all .15s; box-shadow:0 1px 3px rgba(0,0,0,.06);"
+           onmouseover="this.style.borderColor='#4285F4';this.style.boxShadow='0 4px 12px rgba(66,133,244,.2)';this.style.transform='translateY(-1px)'"
+           onmouseout="this.style.borderColor='#E2E8F0';this.style.boxShadow='0 1px 3px rgba(0,0,0,.06)';this.style.transform='none'">
+          <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <rect x="6" y="6" width="36" height="36" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="2"/>
+            <rect x="6" y="14" width="36" height="4" fill="#4285F4"/>
+            <rect x="6" y="6" width="36" height="10" rx="4" fill="#4285F4"/>
+            <line x1="16" y1="4" x2="16" y2="12" stroke="#4285F4" stroke-width="3" stroke-linecap="round"/>
+            <line x1="32" y1="4" x2="32" y2="12" stroke="#4285F4" stroke-width="3" stroke-linecap="round"/>
+            <text x="24" y="36" text-anchor="middle" font-size="16" font-weight="bold" fill="#4285F4" font-family="Arial">↑</text>
+          </svg>
+          Importovat do Google Kalendáře
+        </a>
+        <div class="toggle-wrap">
+          <label class="toggle">
+            <input type="checkbox" id="onlyMD" checked>
+            <span class="slider"></span>
+          </label>
+          <span class="toggle-label">Pouze Šimkovič + Écsiová</span>
+        </div>
       </div>
     </div>
   </div>

@@ -23,8 +23,6 @@ body {
   grid-template-columns: 380px 1fr;
   min-height: 100vh;
 }
-
-/* ── SIDEBAR ── */
 .sidebar {
   background: var(--sidebar);
   color: var(--sidebar-fg);
@@ -39,7 +37,6 @@ body {
 .logo { font-family: 'Source Serif 4', serif; font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 2px; }
 .logo span { color: var(--sidebar-accent); }
 .logo-sub { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--sidebar-muted); margin-bottom: 24px; }
-
 .protocol-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 22px; }
 .ptab {
   padding: 6px 12px; border: 1px solid var(--sidebar-border);
@@ -49,7 +46,6 @@ body {
 }
 .ptab.active { background: var(--sidebar-accent); border-color: var(--sidebar-accent); color: #1e2030; }
 .ptab:not(.active):hover { color: var(--sidebar-fg); border-color: var(--sidebar-fg); }
-
 .sec-label {
   font-size: 9.5px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
   color: var(--sidebar-muted); margin: 18px 0 10px;
@@ -65,7 +61,6 @@ body {
 .field input:focus, .field textarea:focus { border-color: var(--sidebar-accent); }
 .field textarea { resize: vertical; min-height: 60px; line-height: 1.5; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
 .btn-generate {
   width: 100%; margin-top: 18px; padding: 12px;
   background: var(--sidebar-accent); color: #1e2030; border: none; border-radius: 7px;
@@ -73,7 +68,6 @@ body {
   letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.15s;
 }
 .btn-generate:hover { background: #74c7ec; transform: translateY(-1px); }
-
 .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
 .toggle-label { font-size: 12px; color: var(--sidebar-fg); }
 .toggle { position: relative; width: 36px; height: 20px; }
@@ -82,22 +76,17 @@ body {
 .slider:before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.2s; }
 input:checked + .slider { background: var(--sidebar-accent); }
 input:checked + .slider:before { transform: translateX(16px); }
-
-/* ── PREVIEW ── */
 .preview { padding: 36px 40px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; gap: 20px; }
 .preview-empty { margin: auto; text-align: center; color: #aaa; }
 .preview-empty-icon { font-size: 44px; opacity: 0.3; margin-bottom: 12px; }
 .preview-empty h2 { font-family: 'Source Serif 4', serif; font-size: 20px; font-weight: 400; opacity: 0.45; margin-bottom: 6px; }
 .preview-empty p { font-size: 12px; opacity: 0.4; }
-
-/* ── OUTPUT CARD ── */
 .output-card {
   background: #fff; width: 100%; max-width: 740px;
   box-shadow: 0 2px 20px rgba(0,0,0,0.1);
   animation: fadeUp 0.2s ease; border-radius: 6px; overflow: hidden;
 }
 @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-
 .card-toolbar {
   background: #1e2030; padding: 10px 16px;
   display: flex; justify-content: space-between; align-items: center;
@@ -110,10 +99,8 @@ input:checked + .slider:before { transform: translateX(16px); }
 }
 .btn-copy:hover { background: rgba(137,180,250,0.28); }
 .btn-copy.copied { background: rgba(166,227,161,0.2); color: #a6e3a1; border-color: rgba(166,227,161,0.3); }
-
 .doc-wrapper { padding: 28px 32px 32px; font-family: 'Times New Roman', serif; font-size: 13.5px; color: #000; }
 .doc-title { font-size: 14px; font-weight: 700; margin-bottom: 18px; line-height: 1.4; }
-
 .med-table { width: 100%; border-collapse: collapse; font-family: 'Times New Roman', serif; font-size: 13px; }
 .med-table th { border: 1px solid #000; padding: 6px 10px; background: #d9d9d9; font-weight: 700; text-align: left; }
 .med-table td { border: 1px solid #000; padding: 6px 10px; vertical-align: middle; line-height: 1.45; }
@@ -121,7 +108,6 @@ input:checked + .slider:before { transform: translateX(16px); }
 .med-table .note-row td { font-style: italic; font-size: 12.5px; color: #333; }
 .med-table .warn-row td { font-size: 12.5px; color: #111; padding-left: 14px; }
 .med-table .even td { background: #fafafa; }
-
 .doc-hint { margin: 10px 32px 18px; font-size: 11px; color: #999; font-family: 'Source Sans 3', sans-serif; text-align: center; }
 </style>
 </head>
@@ -140,7 +126,6 @@ input:checked + .slider:before { transform: translateX(16px); }
     <button class="ptab" onclick="selectProtocol('custom', this)">Vlastní</button>
   </div>
 
-  <!-- R-CHOP -->
   <div id="params-rchop">
     <div class="sec-label">Parametry</div>
     <div class="field"><label>Datum zahájení ambulantní léčby</label><input type="date" id="rchop-datum"></div>
@@ -156,7 +141,6 @@ input:checked + .slider:before { transform: translateX(16px); }
     <div class="toggle-row"><span class="toggle-label">Granegis při nevolnosti</span><label class="toggle"><input type="checkbox" id="opt-granegis" checked><span class="slider"></span></label></div>
   </div>
 
-  <!-- R-COP -->
   <div id="params-rcop" style="display:none;">
     <div class="sec-label">Parametry</div>
     <div class="field"><label>Datum zahájení ambulantní léčby</label><input type="date" id="rcop-datum"></div>
@@ -171,7 +155,6 @@ input:checked + .slider:before { transform: translateX(16px); }
     <div class="toggle-row"><span class="toggle-label">Granegis při nevolnosti</span><label class="toggle"><input type="checkbox" id="rcop-granegis" checked><span class="slider"></span></label></div>
   </div>
 
-  <!-- Brukinsa -->
   <div id="params-brukinsa" style="display:none;">
     <div class="sec-label">Parametry</div>
     <div class="field"><label>Datum zahájení léčby</label><input type="date" id="brukinsa-datum"></div>
@@ -180,7 +163,6 @@ input:checked + .slider:before { transform: translateX(16px); }
     <div class="toggle-row"><span class="toggle-label">Zahrnout interakční upozornění</span><label class="toggle"><input type="checkbox" id="brukinsa-interakce" checked><span class="slider"></span></label></div>
   </div>
 
-  <!-- Calquence -->
   <div id="params-calquence" style="display:none;">
     <div class="sec-label">Parametry</div>
     <div class="field"><label>Datum zahájení léčby</label><input type="date" id="calquence-datum"></div>
@@ -190,7 +172,6 @@ input:checked + .slider:before { transform: translateX(16px); }
     <div class="toggle-row"><span class="toggle-label">Zahrnout upozornění (interakce, operace)</span><label class="toggle"><input type="checkbox" id="calquence-warn" checked><span class="slider"></span></label></div>
   </div>
 
-  <!-- Vlastní -->
   <div id="params-custom" style="display:none;">
     <div class="sec-label">Vlastní text</div>
     <div class="field"><label>Název léčby / záhlaví</label><input type="text" id="custom-nazev" placeholder="např. ABVD 2. cyklus"></div>
@@ -214,14 +195,12 @@ let storedClipboardHTML = '';
 
 function todayStr() { return new Date().toISOString().slice(0,10); }
 
-// Přidá n dní k datovému řetězci (YYYY-MM-DD) – bez -1 korekce
 function shiftDate(dateStr, n) {
   const d = new Date(dateStr);
   d.setDate(d.getDate() + n);
   return d;
 }
 
-// Přidá n dní a vrátí poslední den trvání (start + n - 1)
 function rangeEnd(dateStr, n) {
   const d = new Date(dateStr);
   d.setDate(d.getDate() + n - 1);
@@ -329,23 +308,20 @@ function generate() {
 
     titleTxt = `Dne ${fmtCS(new Date())} zahájen ${cyklus}. cyklus chemoterapie R-CHOP dle CATO.`;
 
-    // Prednison, Kalnormin, Controloc: od datum+1, na 4 dny (datum+1 až datum+4)
     const predOd  = shiftDate(datum, 1);
     const predDo  = rangeEnd(predOd.toISOString().slice(0,10), 4);
     const odStr   = fmtCS(predOd);
     const doStr   = fmtCS(predDo);
-
-    // Zarzio: od datum+5, na 5 dní (datum+5 až datum+9)
-    const zarzioOd  = shiftDate(datum, 5);
-    const zarzioDo  = rangeEnd(zarzioOd.toISOString().slice(0,10), 5);
+    const zarzioOd    = shiftDate(datum, 5);
+    const zarzioDo    = rangeEnd(zarzioOd.toISOString().slice(0,10), 5);
     const zarzioOdStr = fmtCS(zarzioOd);
     const zarzioDoStr = fmtCS(zarzioDo);
 
     rows.push({ section: 'Dokončení chemoimunoterapie ambulantně' });
     rows.push({ name: 'Prednison 20 mg',        dose: '3-2-0 (ráno-poledne-večer)', od: odStr, do_: doStr });
-    if (kalnormin) rows.push({ name: 'Kalnormin 1 tbl',       dose: '1-0-1',                    od: odStr, do_: doStr });
-    if (controloc) rows.push({ name: 'Controloc 40 mg',       dose: '1-0-0',                    od: odStr, do_: doStr });
-    if (zarzio)    rows.push({ name: 'Zarzio 0,5 ml / 48 MU', dose: '1-0-0 podkožní injekcí',   od: zarzioOdStr, do_: zarzioDoStr });
+    if (kalnormin) rows.push({ name: 'Kalnormin 1 tbl',       dose: '1-0-1',                  od: odStr, do_: doStr });
+    if (controloc) rows.push({ name: 'Controloc 40 mg',       dose: '1-0-0',                  od: odStr, do_: doStr });
+    if (zarzio)    rows.push({ name: 'Zarzio 0,5 ml / 48 MU', dose: '1-0-0 podkožní injekcí', od: zarzioOdStr, do_: zarzioDoStr });
 
     if (dieta || granegis) {
       rows.push({ section: 'Režimová doporučení' });
@@ -366,7 +342,6 @@ function generate() {
 
     titleTxt = `Dne ${fmtCS(new Date())} zahájen ${cyklus}. cyklus chemoterapie R-COP dle CATO.`;
 
-    // Prednison, Kalnormin, Helicid: od datum+1, na 4 dny
     const predOd = shiftDate(datum, 1);
     const predDo = rangeEnd(predOd.toISOString().slice(0,10), 4);
     const odStr  = fmtCS(predOd);
@@ -384,9 +359,9 @@ function generate() {
     }
 
   } else if (currentProtocol === 'brukinsa') {
-    const datum      = document.getElementById('brukinsa-datum').value;
-    poznamka         = document.getElementById('brukinsa-poznamka').value.trim();
-    const interakce  = document.getElementById('brukinsa-interakce').checked;
+    const datum     = document.getElementById('brukinsa-datum').value;
+    poznamka        = document.getElementById('brukinsa-poznamka').value.trim();
+    const interakce = document.getElementById('brukinsa-interakce').checked;
 
     if (!datum) { alert('Vyplňte datum zahájení léčby.'); return; }
 
@@ -408,10 +383,10 @@ function generate() {
     }
 
   } else if (currentProtocol === 'calquence') {
-    const datum   = document.getElementById('calquence-datum').value;
-    poznamka      = document.getElementById('calquence-poznamka').value.trim();
-    const showHT  = document.getElementById('calquence-ht').checked;
-    const showWarn= document.getElementById('calquence-warn').checked;
+    const datum    = document.getElementById('calquence-datum').value;
+    poznamka       = document.getElementById('calquence-poznamka').value.trim();
+    const showHT   = document.getElementById('calquence-ht').checked;
+    const showWarn = document.getElementById('calquence-warn').checked;
 
     if (!datum) { alert('Vyplňte datum zahájení léčby.'); return; }
 

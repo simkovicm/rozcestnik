@@ -34,9 +34,6 @@ const CONFIG = {
         { label: "Laboratorní příručky", url: "https://www.fnhk.cz/laboratorni-prirucky", icon: "*" },
         { label: "Seznam metod UKBD",    url: "https://www.fnhk.cz/ukbd/seznam-metod",   icon: "*" },
         { label: "GitHub",               url: "https://github.com/simkovicm/rozcestnik",  icon: "*" }
-
-
-        
       ]
     },
     {
@@ -122,31 +119,6 @@ const CONFIG = {
     margin-top: 1px;
   }
 
-  .topbar-search {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.07);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 7px 14px;
-  }
-
-  .topbar-search input {
-    background: none;
-    border: none;
-    outline: none;
-    color: var(--text);
-    font-family: 'Source Sans 3', sans-serif;
-    font-size: 0.85rem;
-    width: 200px;
-  }
-
-  .topbar-search input::placeholder { color: var(--muted); }
-
-  .search-icon { color: var(--muted); font-size: 1rem; }
-
   /* ── CLOCK BAR ── */
   .clockbar {
     background: rgba(0,0,0,0.25);
@@ -155,7 +127,79 @@ const CONFIG = {
     color: var(--muted);
     letter-spacing: 0.08em;
     border-bottom: 1px solid var(--border);
+    text-align: right;
   }
+
+  /* ── SEARCH HERO ── */
+  .search-hero {
+    display: flex;
+    justify-content: center;
+    padding: 36px 48px 28px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.15);
+  }
+
+  .search-wrap {
+    width: 100%;
+    max-width: 680px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(91,163,201,0.35);
+    border-radius: 8px;
+    padding: 12px 20px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .search-wrap:focus-within {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(91,163,201,0.12);
+  }
+
+  .search-icon {
+    color: var(--teal);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    opacity: 0.8;
+  }
+
+  .search-wrap input {
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 1rem;
+    width: 100%;
+    letter-spacing: 0.01em;
+  }
+
+  .search-wrap input::placeholder {
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  .search-clear {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+    pointer-events: none;
+  }
+
+  .search-clear.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .search-clear:hover { color: var(--text); }
 
   /* ── MAIN LAYOUT ── */
   main {
@@ -234,20 +278,10 @@ const CONFIG = {
     flex-shrink: 0;
   }
 
-  .link-item:hover {
-    color: var(--teal);
-  }
+  .link-item:hover { color: var(--teal); }
+  .link-item:hover::before { width: 14px; margin-right: 8px; }
 
-  .link-item:hover::before {
-    width: 14px;
-    margin-right: 8px;
-  }
-
-  /* hide original icons */
   .link-icon { display: none; }
-
-  /* divider between sections in same row */
-  .section:not(:first-child) {}
 
   /* ── NO RESULTS ── */
   .no-results {
@@ -269,7 +303,7 @@ const CONFIG = {
   /* ── RESPONSIVE ── */
   @media (max-width: 600px) {
     .topbar { padding: 14px 20px; }
-    .topbar-search { display: none; }
+    .search-hero { padding: 20px 16px; }
     main { padding: 24px 20px 48px; }
     .clockbar { padding: 6px 20px; }
   }
@@ -283,9 +317,14 @@ const CONFIG = {
     <div class="topbar-title" id="title"></div>
     <div class="topbar-sub" id="subtitle">Navigace</div>
   </div>
-  <div class="topbar-search">
+</div>
+
+<!-- Centrální vyhledávání -->
+<div class="search-hero">
+  <div class="search-wrap">
     <span class="search-icon">⌕</span>
     <input type="text" id="search" placeholder="Hledat odkaz…" autocomplete="off" spellcheck="false">
+    <button class="search-clear" id="search-clear" title="Vymazat">✕</button>
   </div>
 </div>
 
@@ -296,11 +335,9 @@ const CONFIG = {
 </main>
 
 <script>
-  // Nadpis
   document.getElementById('title').textContent = CONFIG.title;
   if (CONFIG.subtitle) document.getElementById('subtitle').textContent = CONFIG.subtitle;
 
-  // Vykresli sekce
   const grid = document.getElementById('grid');
 
   function renderSections(sections) {
@@ -337,8 +374,12 @@ const CONFIG = {
   renderSections(CONFIG.sections);
 
   // Vyhledávání
-  document.getElementById('search').addEventListener('input', function () {
+  const searchInput = document.getElementById('search');
+  const searchClear = document.getElementById('search-clear');
+
+  searchInput.addEventListener('input', function () {
     const q = this.value.trim().toLowerCase();
+    searchClear.classList.toggle('visible', q.length > 0);
     let anyVisible = false;
 
     document.querySelectorAll('.section').forEach(section => {
@@ -365,6 +406,12 @@ const CONFIG = {
     } else if (noRes) {
       noRes.remove();
     }
+  });
+
+  searchClear.addEventListener('click', function () {
+    searchInput.value = '';
+    searchInput.dispatchEvent(new Event('input'));
+    searchInput.focus();
   });
 
   // Hodiny

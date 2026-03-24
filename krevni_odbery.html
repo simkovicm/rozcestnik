@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="cs"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generátor žádanek – Odběry</title>
+<style>
+:root {
+  --navy: #102A5A;
+  --navy-light: #1a3d7c;
+  --accent: #C0392B;
+  --gray-bg: #F2F4F8;
+  --white: #ffffff;
+  --border: #D0D6E2;
+  --text: #1a1a2e;
+  --text-muted: #6b7a99;
+  --green: #1a7a4a;
+  --purple: #7b2d8e;
+  --shadow: 0 2px 12px rgba(16,42,90,0.10);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Calibri','Segoe UI',sans-serif; background: #eef1f7; color: var(--text); min-height: 100vh; }
+
+/* HEADER */
+header {
+  background: var(--navy); color: white;
+  padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+header h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+header .subtitle { font-size: 0.8rem; opacity: 0.65; font-weight: 400; margin-left: 8px; text-transform: none; }
+.header-actions { display: flex; gap: 8px; }
+.btn { padding: 7px 14px; border-radius: 4px; font-size: 0.82rem; font-weight: 700;
+  font-family: 'Calibri','Segoe UI',sans-serif; cursor: pointer; border: none;
+  transition: all 0.15s; letter-spacing: 0.02em; }
+.btn-white { background: white; color: var(--navy); }
+.btn-white:hover { background: #dde6f5; }
+.btn-outline-white { background: transparent; color: white; border: 2px solid rgba(255,255,255,0.5); }
+.btn-outline-white:hover { background: rgba(255,255,255,0.12); }
+.btn-primary { background: var(--navy); color: white; }
+.btn-primary:hover { background: var(--navy-light); }
+.btn-secondary { background: var(--gray-bg); color: var(--navy); border: 2px solid var(--navy); }
+.btn-secondary:hover { background: var(--border); }
+.btn-danger { background: white; color: var(--accent); border: 2px solid var(--accent); }
+.btn-danger:hover { background: var(--accent); color: white; }
+.btn-success { background: var(--green); color: white; }
+.btn-success:hover { opacity: 0.88; }
+.btn-sm { padding: 4px 10px; font-size: 0.76rem; }
+.btn-icon { padding: 4px 8px; font-size: 0.82rem; }
+
+/* MAIN */
+.main-layout {
+  display: grid; grid-template-columns: 1fr 400px;
+  gap: 18px; padding: 18px 22px; max-width: 1400px; margin: 0 auto;
+}
+
+/* PRESETS BAR */
+.presets-bar {
+  grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  background: white; border-radius: 6px; padding: 10px 14px; box-shadow: var(--shadow);
+}
+.presets-bar .bar-label { font-size: 0.76rem; font-weight: 700; color: var(--navy);
+  text-transform: uppercase; letter-spacing: 0.06em; margin-right: 4px; white-space: nowrap; }
+.preset-btn {
+  background: var(--white); border: 2px solid var(--navy); color: var(--navy);
+  padding: 4px 12px; border-radius: 4px; font-size: 0.80rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s; font-family: 'Calibri','Segoe UI',sans-serif;
+  display: flex; align-items: center; gap: 5px;
+}
+.preset-btn:hover { background: var(--navy); color: white; }
+.preset-btn .edit-dot { opacity: 0.5; font-size: 0.7rem; }
+.preset-divider { width: 1px; background: var(--border); height: 24px; margin: 0 4px; }
+
+/* CATEGORIES */
+.categories-panel { display: flex; flex-direction: column; gap: 12px; }
+.category-card { background: white; border-radius: 6px; box-shadow: var(--shadow); overflow: hidden; }
+.category-header {
+  background: var(--navy); color: white; padding: 8px 14px;
+  font-size: 0.80rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.category-header-left { display: flex; align-items: center; gap: 8px; }
+.category-header-right { display: flex; gap: 6px; }
+.toggle-all-btn {
+  font-size: 0.70rem; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+  color: white; padding: 2px 8px; border-radius: 3px; cursor: pointer;
+  font-family: 'Calibri','Segoe UI',sans-serif; transition: background 0.15s; white-space: nowrap;
+}
+.toggle-all-btn:hover { background: rgba(255,255,255,0.28); }
+.edit-cat-btn {
+  font-size: 0.70rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.8); padding: 2px 8px; border-radius: 3px; cursor: pointer;
+  font-family: 'Calibri','Segoe UI',sans-serif; transition: background 0.15s;
+}
+.edit-cat-btn:hover { background: rgba(255,255,255,0.22); color: white; }
+
+.category-body { padding: 4px 0; }
+.section-label {
+  font-size: 0.70rem; font-weight: 700; color: var(--navy); text-transform: uppercase;
+  letter-spacing: 0.07em; padding: 5px 14px 2px; background: #f7f9fc;
+  border-bottom: 1px solid var(--border); border-top: 1px solid var(--border); margin-top: 2px;
+}
+.item-row {
+  display: flex; align-items: center; padding: 5px 14px; gap: 9px; cursor: pointer; transition: background 0.1s;
+}
+.item-row:nth-child(even) { background: var(--gray-bg); }
+.item-row:nth-child(odd) { background: var(--white); }
+.item-row:hover { background: #dde6f5; }
+.item-row input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--navy); cursor: pointer; flex-shrink: 0; }
+.item-row label { font-size: 0.86rem; cursor: pointer; line-height: 1.3; flex: 1; }
+.item-row.checked label { color: var(--navy); font-weight: 600; }
+
+/* RIGHT PANEL */
+.output-panel { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 18px; align-self: start; }
+.output-card { background: white; border-radius: 6px; box-shadow: var(--shadow); overflow: hidden; border-top: 3px solid var(--navy); }
+.output-card-header {
+  background: var(--navy); color: white; padding: 8px 14px;
+  font-size: 0.80rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.output-card-body { padding: 12px 14px; }
+.patient-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.patient-grid .full-width { grid-column: 1/-1; }
+.form-group label { display: block; font-size: 0.70rem; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 5px 9px; border: 1.5px solid var(--border); border-radius: 4px;
+  font-size: 0.85rem; font-family: 'Calibri','Segoe UI',sans-serif; color: var(--text);
+  background: var(--gray-bg); transition: border-color 0.15s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  outline: none; border-color: var(--navy); background: white;
+}
+.form-group textarea { resize: vertical; min-height: 50px; }
+.output-textarea {
+  width: 100%; min-height: 180px; font-family: 'Calibri','Segoe UI',sans-serif;
+  font-size: 0.85rem; line-height: 1.55; border: 1.5px solid var(--border); border-radius: 4px;
+  padding: 9px 11px; resize: vertical; color: var(--text); background: #f9fafd;
+}
+.output-textarea:focus { outline: none; border-color: var(--navy); }
+.selected-count { font-size: 0.74rem; color: #aac4f5; font-weight: 400; }
+.action-row { display: flex; align-items: center; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
+.copy-feedback { font-size: 0.76rem; color: var(--green); font-weight: 700; display: none; align-items: center; gap: 3px; }
+.copy-feedback.show { display: flex; }
+
+/* IMUNO NOTE */
+.imuno-card { background: white; border-radius: 6px; box-shadow: var(--shadow); overflow: hidden; border-top: 3px solid var(--purple); display: none; }
+.imuno-card-header { background: var(--purple); color: white; padding: 8px 14px; font-size: 0.80rem; font-weight: 700; }
+.imuno-card-body { padding: 10px 14px; font-size: 0.84rem; }
+.imuno-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.imuno-toggle input { accent-color: var(--purple); }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(10,20,50,0.55); z-index: 1000;
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: white; border-radius: 8px; box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+  width: 100%; max-width: 700px; max-height: 90vh; display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.modal-header {
+  background: var(--navy); color: white; padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-header h2 { font-size: 1rem; font-weight: 700; letter-spacing: 0.04em; }
+.modal-close { background: none; border: none; color: white; font-size: 1.3rem; cursor: pointer; line-height: 1; padding: 0 4px; }
+.modal-close:hover { opacity: 0.7; }
+.modal-body { padding: 18px 20px; overflow-y: auto; flex: 1; }
+.modal-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; background: #f8f9fd; }
+
+/* EDITOR TABS */
+.editor-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--navy); margin-bottom: 16px; }
+.editor-tab {
+  padding: 7px 16px; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+  border: none; background: none; color: var(--text-muted); font-family: 'Calibri','Segoe UI',sans-serif;
+  border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.15s;
+}
+.editor-tab.active { color: var(--navy); border-bottom-color: var(--navy); }
+.editor-tab:hover:not(.active) { color: var(--navy); background: var(--gray-bg); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ITEMS EDITOR */
+.cat-selector { margin-bottom: 12px; }
+.items-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.edit-item-row {
+  display: flex; align-items: center; gap: 6px; padding: 5px 8px;
+  background: var(--gray-bg); border-radius: 4px; border: 1px solid var(--border);
+}
+.edit-item-row input[type=text] {
+  flex: 1; border: 1.5px solid var(--border); border-radius: 3px; padding: 4px 8px;
+  font-size: 0.84rem; font-family: 'Calibri','Segoe UI',sans-serif; background: white;
+}
+.edit-item-row input[type=text]:focus { outline: none; border-color: var(--navy); }
+.drag-handle { cursor: grab; color: var(--text-muted); font-size: 1rem; padding: 0 2px; }
+.drag-handle:active { cursor: grabbing; }
+.section-divider-row {
+  display: flex; align-items: center; gap: 6px; padding: 4px 8px;
+  background: #edf0f7; border-radius: 4px; border: 1px dashed var(--border);
+}
+.section-divider-row input[type=text] {
+  flex: 1; border: 1.5px solid var(--border); border-radius: 3px; padding: 3px 7px;
+  font-size: 0.78rem; font-weight: 700; color: var(--navy); font-family: 'Calibri','Segoe UI',sans-serif;
+  background: white; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.section-divider-row input[type=text]:focus { outline: none; border-color: var(--navy); }
+.type-badge { font-size: 0.68rem; padding: 1px 6px; border-radius: 10px; font-weight: 700;
+  white-space: nowrap; }
+.type-badge.item { background: #dde6f5; color: var(--navy); }
+.type-badge.section { background: #f0e6f5; color: var(--purple); }
+.add-row-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* CATEGORIES EDITOR */
+.cats-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.edit-cat-row {
+  display: flex; align-items: center; gap: 7px; padding: 7px 10px;
+  background: var(--gray-bg); border-radius: 5px; border: 1px solid var(--border);
+}
+.edit-cat-row input[type=text] {
+  flex: 1; border: 1.5px solid var(--border); border-radius: 3px; padding: 5px 9px;
+  font-size: 0.88rem; font-family: 'Calibri','Segoe UI',sans-serif; background: white;
+}
+.edit-cat-row input[type=text]:focus { outline: none; border-color: var(--navy); }
+.cat-emoji-input { width: 52px !important; text-align: center; font-size: 1.1rem !important; flex: none !important; }
+
+/* PRESETS EDITOR */
+.presets-list { display: flex; flex-direction: column; gap: 8px; }
+.preset-editor-row {
+  background: var(--gray-bg); border-radius: 5px; border: 1px solid var(--border);
+  padding: 10px 12px;
+}
+.preset-editor-row .preset-row-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+}
+.preset-editor-row input[type=text] {
+  border: 1.5px solid var(--border); border-radius: 3px; padding: 4px 8px;
+  font-size: 0.85rem; font-family: 'Calibri','Segoe UI',sans-serif; background: white;
+}
+.preset-editor-row input[type=text]:focus { outline: none; border-color: var(--navy); }
+.preset-items-editor { font-size: 0.82rem; color: var(--text-muted); }
+.preset-items-editor .pi-label { font-size: 0.70rem; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.preset-items-editor textarea {
+  width: 100%; border: 1.5px solid var(--border); border-radius: 3px; padding: 5px 8px;
+  font-size: 0.80rem; font-family: 'Calibri','Segoe UI',sans-serif; background: white;
+  min-height: 56px; resize: vertical;
+}
+.preset-items-editor textarea:focus { outline: none; border-color: var(--navy); }
+
+/* CONFIRM DIALOG */
+.confirm-dialog {
+  position: fixed; inset: 0; background: rgba(10,20,50,0.6); z-index: 2000;
+  display: none; align-items: center; justify-content: center;
+}
+.confirm-dialog.open { display: flex; }
+.confirm-box {
+  background: white; border-radius: 8px; padding: 24px 28px; max-width: 340px;
+  text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+}
+.confirm-box h3 { font-size: 1rem; color: var(--navy); margin-bottom: 8px; }
+.confirm-box p { font-size: 0.86rem; color: var(--text-muted); margin-bottom: 16px; }
+.confirm-box .confirm-btns { display: flex; gap: 10px; justify-content: center; }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; background: var(--navy); color: white;
+  padding: 10px 18px; border-radius: 6px; font-size: 0.84rem; font-weight: 600;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2); z-index: 3000; opacity: 0;
+  transition: opacity 0.25s; pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+@media (max-width: 900px) {
+  .main-layout { grid-template-columns: 1fr; }
+  .output-panel { position: static; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <svg width="26" height="26" viewBox="0 0 28 28" fill="none"><rect x="2" y="2" width="24" height="24" rx="4" fill="white" fill-opacity="0.15"></rect><path d="M7 14h14M14 7v14" stroke="white" stroke-width="2.2" stroke-linecap="round"></path></svg>
+    <h1>Generátor žádanky – Odběry<span class="subtitle">IHK FNHK / Hematoonkologie</span></h1>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-outline-white" onclick="openEditor()">✏️ Upravit seznam</button>
+    <button class="btn btn-white" onclick="openExport()">📦 Exportovat kód</button>
+  </div>
+</header>
+
+<div class="main-layout">
+
+  <div class="presets-bar" id="presetsBar">
+    <span class="bar-label">Předvolby:</span>
+    <div id="presetButtons"><button class="preset-btn">Běžné sledování</button><button class="preset-btn">Běžné + CT</button><button class="preset-btn">Po léčbě CLL</button><button class="preset-btn">Před chemoterapií</button></div>
+    <div class="preset-divider"></div>
+    <button class="btn btn-danger btn-sm" onclick="resetAll()">✕ Vymazat vše</button>
+  </div>
+
+  <div class="categories-panel" id="categoriesPanel"><div class="category-card">
+      <div class="category-header">
+        <div class="category-header-left">
+          <span>🔴 Hematologie</span>
+        </div>
+        <div class="category-header-right">
+          <button class="toggle-all-btn" onclick="toggleAll('hemat')">Vybrat vše</button>
+        </div>
+      </div>
+      <div class="category-body" id="cat_hemat"><div class="item-row" data-val="KO" data-cat="hemat"><input type="checkbox" data-val="KO" data-cat="hemat"><label>KO</label></div><div class="item-row" data-val="dif. aut." data-cat="hemat"><input type="checkbox" data-val="dif. aut." data-cat="hemat"><label>dif. aut. (diferenciální rozpočet automatický)</label></div><div class="item-row" data-val="dif. man." data-cat="hemat"><input type="checkbox" data-val="dif. man." data-cat="hemat"><label>dif. man. (diferenciální rozpočet manuální)</label></div><div class="item-row" data-val="retikulocyty" data-cat="hemat"><input type="checkbox" data-val="retikulocyty" data-cat="hemat"><label>retikulocyty</label></div><div class="item-row" data-val="schistocyty" data-cat="hemat"><input type="checkbox" data-val="schistocyty" data-cat="hemat"><label>schistocyty</label></div><div class="item-row" data-val="IPF" data-cat="hemat"><input type="checkbox" data-val="IPF" data-cat="hemat"><label>IPF (immature platelet fraction)</label></div></div>
+    </div><div class="category-card">
+      <div class="category-header">
+        <div class="category-header-left">
+          <span>🟠 Koagulace</span>
+        </div>
+        <div class="category-header-right">
+          <button class="toggle-all-btn" onclick="toggleAll('koag')">Vybrat vše</button>
+        </div>
+      </div>
+      <div class="category-body" id="cat_koag"><div class="item-row" data-val="INR, APTT" data-cat="koag"><input type="checkbox" data-val="INR, APTT" data-cat="koag"><label>INR, APTT</label></div><div class="item-row" data-val="FBG, D-dimery, AT3" data-cat="koag"><input type="checkbox" data-val="FBG, D-dimery, AT3" data-cat="koag"><label>FBG, D-dimery, AT3</label></div><div class="item-row" data-val="Rivaroxaban – monitoring léčby" data-cat="koag"><input type="checkbox" data-val="Rivaroxaban – monitoring léčby" data-cat="koag"><label>Rivaroxaban – monitoring léčby</label></div><div class="item-row" data-val="Apixaban – monitoring léčby" data-cat="koag"><input type="checkbox" data-val="Apixaban – monitoring léčby" data-cat="koag"><label>Apixaban – monitoring léčby</label></div><div class="item-row" data-val="Edoxaban – monitoring léčby" data-cat="koag"><input type="checkbox" data-val="Edoxaban – monitoring léčby" data-cat="koag"><label>Edoxaban – monitoring léčby</label></div><div class="item-row" data-val="Dabigatran – monitoring léčby" data-cat="koag"><input type="checkbox" data-val="Dabigatran – monitoring léčby" data-cat="koag"><label>Dabigatran – monitoring léčby</label></div><div class="item-row" data-val="PT korekce v čase 0 a po 1h" data-cat="koag"><input type="checkbox" data-val="PT korekce v čase 0 a po 1h" data-cat="koag"><label>PT korekce v čase 0 a po 1h</label></div><div class="item-row" data-val="APTT korekce v čase 0 a po 1h" data-cat="koag"><input type="checkbox" data-val="APTT korekce v čase 0 a po 1h" data-cat="koag"><label>APTT korekce v čase 0 a po 1h</label></div></div>
+    </div><div class="category-card">
+      <div class="category-header">
+        <div class="category-header-left">
+          <span>🟡 Biochemie</span>
+        </div>
+        <div class="category-header-right">
+          <button class="toggle-all-btn" onclick="toggleAll('bio')">Vybrat vše</button>
+        </div>
+      </div>
+      <div class="category-body" id="cat_bio"><div class="section-label">Základní panel</div><div class="item-row" data-val="gly, Na, K, Cl, urea, krea, LDH, k. moč, bili, bili konj., ALT, AST, GMT, ALP, CRP" data-cat="bio"><input type="checkbox" data-val="gly, Na, K, Cl, urea, krea, LDH, k. moč, bili, bili konj., ALT, AST, GMT, ALP, CRP" data-cat="bio"><label>gly, Na, K, Cl, urea, krea, LDH, k. moč, bili, bili konj., ALT, AST, GMT, ALP, CRP</label></div><div class="item-row" data-val="Ca, Cai, Mg, P, celková bílkovina, albumin" data-cat="bio"><input type="checkbox" data-val="Ca, Cai, Mg, P, celková bílkovina, albumin" data-cat="bio"><label>Ca, Cai, Mg, P, celková bílkovina, albumin</label></div><div class="item-row" data-val="TSH" data-cat="bio"><input type="checkbox" data-val="TSH" data-cat="bio"><label>TSH</label></div><div class="item-row" data-val="TSH, fT3, fT4" data-cat="bio"><input type="checkbox" data-val="TSH, fT3, fT4" data-cat="bio"><label>TSH, fT3, fT4</label></div><div class="section-label">Anémie</div><div class="item-row" data-val="kys. listová, vit. B12" data-cat="bio"><input type="checkbox" data-val="kys. listová, vit. B12" data-cat="bio"><label>kys. listová, vit. B12</label></div><div class="item-row" data-val="s_Fe, FeVK, transferin, feritin" data-cat="bio"><input type="checkbox" data-val="s_Fe, FeVK, transferin, feritin" data-cat="bio"><label>s_Fe, FeVK, transferin, feritin</label></div><div class="item-row" data-val="Coombsův přímý a nepřímý test" data-cat="bio"><input type="checkbox" data-val="Coombsův přímý a nepřímý test" data-cat="bio"><label>Coombsův přímý a nepřímý test</label></div><div class="item-row" data-val="krevní skupina" data-cat="bio"><input type="checkbox" data-val="krevní skupina" data-cat="bio"><label>krevní skupina</label></div><div class="item-row" data-val="haptoglobin" data-cat="bio"><input type="checkbox" data-val="haptoglobin" data-cat="bio"><label>haptoglobin</label></div><div class="section-label">Staging a restaging</div><div class="item-row" data-val="beta-2-mikroglobulin" data-cat="bio"><input type="checkbox" data-val="beta-2-mikroglobulin" data-cat="bio"><label>beta-2-mikroglobulin</label></div><div class="item-row" data-val="anti HBc Ig total + IgM, HBsAg, anti HCV Ig, anti HIV 1,2" data-cat="bio"><input type="checkbox" data-val="anti HBc Ig total + IgM, HBsAg, anti HCV Ig, anti HIV 1,2" data-cat="bio"><label>anti HBc Ig total + IgM, HBsAg, anti HCV Ig, anti HIV 1,2</label></div><div class="item-row" data-val="anti CMV IgG" data-cat="bio"><input type="checkbox" data-val="anti CMV IgG" data-cat="bio"><label>anti CMV IgG</label></div><div class="item-row" data-val="IgG, IgM, IgA" data-cat="bio"><input type="checkbox" data-val="IgG, IgM, IgA" data-cat="bio"><label>IgG, IgM, IgA</label></div><div class="item-row" data-val="IgG" data-cat="bio"><input type="checkbox" data-val="IgG" data-cat="bio"><label>IgG (samotné)</label></div><div class="item-row" data-val="HBsAg, anti-HBs, HBeAg, anti-HBe, anti-HBc total, anti-HBc IgG, IgM, PCR HBV" data-cat="bio"><input type="checkbox" data-val="HBsAg, anti-HBs, HBeAg, anti-HBe, anti-HBc total, anti-HBc IgG, IgM, PCR HBV" data-cat="bio"><label>HBsAg, anti-HBs, HBeAg, anti-HBe, anti-HBc total, anti-HBc IgG, IgM, PCR HBV</label></div><div class="item-row" data-val="kvantif. paraproteinu (sérum), lehké řetězce (FLC)" data-cat="bio"><input type="checkbox" data-val="kvantif. paraproteinu (sérum), lehké řetězce (FLC)" data-cat="bio"><label>kvantif. paraproteinu (sérum), lehké řetězce (FLC)</label></div></div>
+    </div><div class="category-card">
+      <div class="category-header">
+        <div class="category-header-left">
+          <span>🔵 Moč, kultivace, infekce</span>
+        </div>
+        <div class="category-header-right">
+          <button class="toggle-all-btn" onclick="toggleAll('moc')">Vybrat vše</button>
+        </div>
+      </div>
+      <div class="category-body" id="cat_moc"><div class="item-row" data-val="moč chemicky + sediment" data-cat="moc"><input type="checkbox" data-val="moč chemicky + sediment" data-cat="moc"><label>moč chemicky + sediment</label></div><div class="item-row" data-val="výtěr krku K+C, moč K+C" data-cat="moc"><input type="checkbox" data-val="výtěr krku K+C, moč K+C" data-cat="moc"><label>výtěr krku K+C, moč K+C</label></div><div class="item-row" data-val="hemokultury 1+1" data-cat="moc"><input type="checkbox" data-val="hemokultury 1+1" data-cat="moc"><label>hemokultury 1+1</label></div><div class="item-row" data-val="Clostridiový toxin a antigen" data-cat="moc"><input type="checkbox" data-val="Clostridiový toxin a antigen" data-cat="moc"><label>Clostridiový toxin a antigen</label></div><div class="item-row" data-val="aspergilový galaktomanan z krve" data-cat="moc"><input type="checkbox" data-val="aspergilový galaktomanan z krve" data-cat="moc"><label>aspergilový galaktomanan z krve</label></div><div class="item-row" data-val="Beta-D-glukan" data-cat="moc"><input type="checkbox" data-val="Beta-D-glukan" data-cat="moc"><label>Beta-D-glukan</label></div><div class="item-row" data-val="adenoviry, rotaviry" data-cat="moc"><input type="checkbox" data-val="adenoviry, rotaviry" data-cat="moc"><label>adenoviry, rotaviry</label></div><div class="item-row" data-val="PCR CMV" data-cat="moc"><input type="checkbox" data-val="PCR CMV" data-cat="moc"><label>PCR CMV</label></div><div class="item-row" data-val="PCR EBV" data-cat="moc"><input type="checkbox" data-val="PCR EBV" data-cat="moc"><label>PCR EBV</label></div><div class="item-row" data-val="PCR BK virus" data-cat="moc"><input type="checkbox" data-val="PCR BK virus" data-cat="moc"><label>PCR BK virus</label></div><div class="item-row" data-val="PCR HBV" data-cat="moc"><input type="checkbox" data-val="PCR HBV" data-cat="moc"><label>PCR HBV</label></div><div class="item-row" data-val="PCR HCV" data-cat="moc"><input type="checkbox" data-val="PCR HCV" data-cat="moc"><label>PCR HCV</label></div><div class="item-row" data-val="PCR HEV" data-cat="moc"><input type="checkbox" data-val="PCR HEV" data-cat="moc"><label>PCR HEV</label></div><div class="item-row" data-val="respirační panel" data-cat="moc"><input type="checkbox" data-val="respirační panel" data-cat="moc"><label>respirační panel</label></div></div>
+    </div><div class="category-card">
+      <div class="category-header">
+        <div class="category-header-left">
+          <span>🟣 Kožní / Morfologie</span>
+        </div>
+        <div class="category-header-right">
+          <button class="toggle-all-btn" onclick="toggleAll('kozni')">Vybrat vše</button>
+        </div>
+      </div>
+      <div class="category-body" id="cat_kozni"><div class="item-row" data-val="přímá imunofluorescence" data-cat="kozni"><input type="checkbox" data-val="přímá imunofluorescence" data-cat="kozni"><label>přímá imunofluorescence</label></div><div class="section-label">Sternální punkce</div><div class="item-row" data-val="sternální punkce (cytologie, IF)" data-cat="kozni"><input type="checkbox" data-val="sternální punkce (cytologie, IF)" data-cat="kozni"><label>sternální punkce (cytologie, IF)</label></div><div class="item-row" data-val="sternální punkce (cytologie, IF, karyotyp)" data-cat="kozni"><input type="checkbox" data-val="sternální punkce (cytologie, IF, karyotyp)" data-cat="kozni"><label>sternální punkce (cytologie, IF, karyotyp)</label></div><div class="section-label">Ostatní morfologie</div><div class="item-row" data-val="předtransplantační odběry" data-cat="kozni"><input type="checkbox" data-val="předtransplantační odběry" data-cat="kozni"><label>předtransplantační odběry</label></div><div class="item-row" data-val="imunofenotypizace perif. krve" data-cat="kozni"><input type="checkbox" data-val="imunofenotypizace perif. krve" data-cat="kozni"><label>imunofenotypizace perif. krve</label></div><div class="section-label">Hladiny léků</div><div class="item-row" data-val="hladina vorikonazolu" data-cat="kozni"><input type="checkbox" data-val="hladina vorikonazolu" data-cat="kozni"><label>hladina vorikonazolu</label></div><div class="item-row" data-val="hladina posakonazolu" data-cat="kozni"><input type="checkbox" data-val="hladina posakonazolu" data-cat="kozni"><label>hladina posakonazolu</label></div><div class="item-row" data-val="hladina FK-506" data-cat="kozni"><input type="checkbox" data-val="hladina FK-506" data-cat="kozni"><label>hladina FK-506</label></div></div>
+    </div><div class="category-card">
+      <div class="category-header">
+        <div class="category-header-left">
+          <span>⚪ Ostatní / Speciální</span>
+        </div>
+        <div class="category-header-right">
+          <button class="toggle-all-btn" onclick="toggleAll('ostatni')">Vybrat vše</button>
+        </div>
+      </div>
+      <div class="category-body" id="cat_ostatni"><div class="item-row" data-val="elastáza ve stolici (pankr. funkce)" data-cat="ostatni"><input type="checkbox" data-val="elastáza ve stolici (pankr. funkce)" data-cat="ostatni"><label>elastáza ve stolici (pankr. funkce)</label></div><div class="item-row" data-val="amoniak (jaterní selhání)" data-cat="ostatni"><input type="checkbox" data-val="amoniak (jaterní selhání)" data-cat="ostatni"><label>amoniak (jaterní selhání)</label></div><div class="item-row" data-val="Frakční exkrece sodíku" data-cat="ostatni"><input type="checkbox" data-val="Frakční exkrece sodíku" data-cat="ostatni"><label>Frakční exkrece sodíku (prerenální RI)</label></div><div class="item-row" data-val="ACR (albumin/kreatinin_U)" data-cat="ostatni"><input type="checkbox" data-val="ACR (albumin/kreatinin_U)" data-cat="ostatni"><label>ACR – albumin/kreatinin_U</label></div><div class="item-row" data-val="sérová tryptáza" data-cat="ostatni"><input type="checkbox" data-val="sérová tryptáza" data-cat="ostatni"><label>sérová tryptáza</label></div><div class="item-row" data-val="myoglobin, CK" data-cat="ostatni"><input type="checkbox" data-val="myoglobin, CK" data-cat="ostatni"><label>myoglobin, CK</label></div><div class="item-row" data-val="kalprotektin ze stolice" data-cat="ostatni"><input type="checkbox" data-val="kalprotektin ze stolice" data-cat="ostatni"><label>kalprotektin ze stolice</label></div><div class="item-row" data-val="Doppler UZ jater, alfa-fetoprotein" data-cat="ostatni"><input type="checkbox" data-val="Doppler UZ jater, alfa-fetoprotein" data-cat="ostatni"><label>Doppler UZ jater, alfa-fetoprotein (hepatitida)</label></div><div class="item-row" data-val="c-kit D816, c-kit exon 17,8,7 (žádanka MB, ÚKBD)" data-cat="ostatni"><input type="checkbox" data-val="c-kit D816, c-kit exon 17,8,7 (žádanka MB, ÚKBD)" data-cat="ostatni"><label>c-kit D816, c-kit exon 17,8,7 (žádanka MB, ÚKBD)</label></div><div class="item-row" data-val="etylglukoronid" data-cat="ostatni"><input type="checkbox" data-val="etylglukoronid" data-cat="ostatni"><label>etylglukoronid</label></div><div class="item-row" data-val="NT-proBNP" data-cat="ostatni"><input type="checkbox" data-val="NT-proBNP" data-cat="ostatni"><label>NT-proBNP</label></div><div class="item-row" data-val="Cystatin C" data-cat="ostatni"><input type="checkbox" data-val="Cystatin C" data-cat="ostatni"><label>Cystatin C</label></div><div class="item-row" data-val="Parathormon, 1,25 (OH)2 vit. D, 25 (OH) vit. D" data-cat="ostatni"><input type="checkbox" data-val="Parathormon, 1,25 (OH)2 vit. D, 25 (OH) vit. D" data-cat="ostatni"><label>Parathormon, 1,25 (OH)2 vit. D, 25 (OH) vit. D</label></div><div class="item-row" data-val="IL-6 (autoimunity)" data-cat="ostatni"><input type="checkbox" data-val="IL-6 (autoimunity)" data-cat="ostatni"><label>IL-6 (autoimunity)</label></div><div class="item-row" data-val="sIL-2 receptor (sCD25)" data-cat="ostatni"><input type="checkbox" data-val="sIL-2 receptor (sCD25)" data-cat="ostatni"><label>sIL-2 receptor (sCD25)</label></div><div class="section-label">Speciální CLL</div><div class="item-row" data-val="CLL prognostické ukazatele (zápis do amb. k.)" data-cat="ostatni"><input type="checkbox" data-val="CLL prognostické ukazatele (zápis do amb. k.)" data-cat="ostatni"><label>CLL prognostické ukazatele (zápis do amb. k.)</label></div><div class="item-row" data-val="CLL cytogenetika" data-cat="ostatni"><input type="checkbox" data-val="CLL cytogenetika" data-cat="ostatni"><label>CLL cytogenetika</label></div><div class="item-row" data-val="CIRS" data-cat="ostatni"><input type="checkbox" data-val="CIRS" data-cat="ostatni"><label>CIRS</label></div></div>
+    </div></div>
+
+  <!-- RIGHT PANEL -->
+  <div class="output-panel">
+    <div class="output-card">
+      <div class="output-card-header">👤 Pacient / Kontext</div>
+      <div class="output-card-body">
+        <div class="patient-grid">
+          <div class="form-group full-width">
+            <label>Jméno pacienta</label>
+            <input type="text" id="patientName" placeholder="Příjmení, jméno" oninput="generateText()">
+          </div>
+          <div class="form-group">
+            <label>Datum narození</label>
+            <input type="text" id="patientDOB" placeholder="dd.mm.rrrr" oninput="generateText()">
+          </div>
+          <div class="form-group">
+            <label>Diagnóza</label>
+            <input type="text" id="diagnosis" placeholder="např. CLL, lymfom…" oninput="generateText()">
+          </div>
+          <div class="form-group full-width">
+            <label>Kontext / Důvod odběru</label>
+            <select id="context" onchange="generateText()">
+              <option value="">– bez upřesnění –</option>
+              <option>Běžné sledování</option>
+              <option>Staging</option>
+              <option>Restaging</option>
+              <option>Před chemoterapií</option>
+              <option>Po léčbě</option>
+              <option>Kontrolní odběr</option>
+              <option>Infekce / febrílie</option>
+              <option>Hospitalizace</option>
+            </select>
+          </div>
+          <div class="form-group full-width">
+            <label>Doplňující poznámka</label>
+            <textarea id="extraNote" placeholder="Volný text, instrukce pro laboratoř…" oninput="generateText()"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="imuno-card" id="imunoCard" style="display: none;">
+      <div class="imuno-card-header">💡 Doplněk – imunofenotypizace CLL</div>
+      <div class="imuno-card-body">
+        <label class="imuno-toggle">
+          <input type="checkbox" id="imunoFenoCLL" onchange="generateText()">
+          Přidat text o CD5, CD19, CD20, CD23, lehkých řetězcích a CD49d
+        </label>
+      </div>
+    </div>
+
+    <div class="output-card">
+      <div class="output-card-header">
+        📋 Vygenerovaný text
+        <span class="selected-count" id="selectedCount">0 položek</span>
+      </div>
+      <div class="output-card-body">
+        <textarea class="output-textarea" id="outputText" readonly="" placeholder="Vyberte položky vlevo…"></textarea>
+        <div class="action-row">
+          <button class="btn btn-success" onclick="copyText()">📋 Kopírovat</button>
+          <button class="btn btn-secondary" onclick="resetAll()">🔄 Reset</button>
+          <span class="copy-feedback" id="copyFeedback">✓ Zkopírováno!</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== EDITOR MODAL ===== -->
+<div class="modal-overlay" id="editorModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>✏️ Editor – úprava seznamu odběrů</h2>
+      <button class="modal-close" onclick="closeEditor()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="editor-tabs">
+        <button class="editor-tab" onclick="switchTab('items')">Položky a sekce</button>
+        <button class="editor-tab" onclick="switchTab('categories')">Kategorie</button>
+        <button class="editor-tab active" onclick="switchTab('presets')">Předvolby</button>
+      </div>
+
+      <!-- TAB: ITEMS -->
+      <div class="tab-content" id="tab-items">
+        <div class="cat-selector form-group">
+          <label>Vyberte kategorii k úpravě</label>
+          <select id="editCatSelect" onchange="renderItemsEditor()"><option value="hemat">🔴 Hematologie</option><option value="koag">🟠 Koagulace</option><option value="bio">🟡 Biochemie</option><option value="moc">🔵 Moč, kultivace, infekce</option><option value="kozni">🟣 Kožní / Morfologie</option><option value="ostatni">⚪ Ostatní / Speciální</option></select>
+        </div>
+        <div class="items-list" id="itemsEditorList"><div class="edit-item-row">
+        <span class="drag-handle" title="Přesunout">⠿</span>
+        <span class="type-badge item">Položka</span>
+        <input type="text" value="KO" placeholder="Popisek (zobrazený)" data-idx="0" data-field="label" oninput="updateEditorRow(this)" style="flex:2;">
+        <input type="text" value="KO" placeholder="Hodnota (do textu žádanky)" data-idx="0" data-field="val" oninput="updateEditorRow(this)" style="flex:2;">
+        <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveEditorRow(0,-1)" title="Nahoru">↑</button>
+        <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveEditorRow(0,1)" title="Dolů">↓</button>
+        <button class="btn btn-icon btn-danger" onclick="removeEditorRow(0)" title="Smazat">✕</button></div><div class="edit-item-row">
+        <span class="drag-handle" title="Přesunout">⠿</span>
+        <span class="type-badge item">Položka</span>
+        <input type="text" value="dif. aut. (diferenciální rozpočet automatický)" placeholder="Popisek (zobrazený)" data-idx="1" data-field="label" oninput="updateEditorRow(this)" style="flex:2;">
+        <input type="text" value="dif. aut." placeholder="Hodnota (do textu žádanky)" data-idx="1" data-field="val" oninput="updateEditorRow(this)" style="flex:2;">
+        <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveEditorRow(1,-1)" title="Nahoru">↑</button>
+        <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveEditorRow(1,1)" title="Dolů">↓</button>
+        <button class="btn btn-icon btn-danger" onclick="removeEditorRow(1)" title="Smazat">✕</button></div><div class="edit-item-row">
+        <span class="drag-handle" title="Přesunout">⠿</span>
+        <span class="type-badge item">Položka</span>
+        <input type="text" value="dif. man. (diferenciální rozpočet manuální)" placeholder="Popisek (zobrazený)" data-idx="2" data-field="label" oninput="updateEditorRow(this)" style="flex:2;">
+        <input type="text" value="dif. man." placeholder="Hodnota (do textu žádanky)" data-idx="2" data-field="val" oninput="updateEditorRow(this)" style="flex:2;">
+        <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveEditorRow(2,-1)" title="Nahoru">↑</button>
+        <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveEditorRow(2,1)" title="Dolů">↓</button>
+        <button class="btn btn-icon btn-danger" onclick="removeEditorRow(2)" title="Smazat">✕</button></div><div class="edit-item-row">
+        <span class="drag-handle" title="Přesunout">⠿</span>
+        <span class="type-badge item">Položka</span>
+        <input type="text" value="retikulocyty" placeholder="Popisek (zobrazený)" data-idx="3" data-field="label" oninput="updateEditorRow(this)" style="flex:2;">
+        <input type="text" value="retikulocyty" placeholder="Hodnota (do textu žádanky)" data-idx="3" data-field="val" oninput="updateEditorRow(this)" style="flex:2;">
+        <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveEditorRow(3,-1)" title="Nahoru">↑</button>
+        <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveEditorRow(3,1)" title="Dolů">↓</button>
+        <button class="btn btn-icon btn-danger" onclick="removeEditorRow(3)" title="Smazat">✕</button></div><div class="edit-item-row">
+        <span class="drag-handle" title="Přesunout">⠿</span>
+        <span class="type-badge item">Položka</span>
+        <input type="text" value="schistocyty" placeholder="Popisek (zobrazený)" data-idx="4" data-field="label" oninput="updateEditorRow(this)" style="flex:2;">
+        <input type="text" value="schistocyty" placeholder="Hodnota (do textu žádanky)" data-idx="4" data-field="val" oninput="updateEditorRow(this)" style="flex:2;">
+        <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveEditorRow(4,-1)" title="Nahoru">↑</button>
+        <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveEditorRow(4,1)" title="Dolů">↓</button>
+        <button class="btn btn-icon btn-danger" onclick="removeEditorRow(4)" title="Smazat">✕</button></div><div class="edit-item-row">
+        <span class="drag-handle" title="Přesunout">⠿</span>
+        <span class="type-badge item">Položka</span>
+        <input type="text" value="IPF (immature platelet fraction)" placeholder="Popisek (zobrazený)" data-idx="5" data-field="label" oninput="updateEditorRow(this)" style="flex:2;">
+        <input type="text" value="IPF" placeholder="Hodnota (do textu žádanky)" data-idx="5" data-field="val" oninput="updateEditorRow(this)" style="flex:2;">
+        <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveEditorRow(5,-1)" title="Nahoru">↑</button>
+        <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveEditorRow(5,1)" title="Dolů">↓</button>
+        <button class="btn btn-icon btn-danger" onclick="removeEditorRow(5)" title="Smazat">✕</button></div></div>
+        <div class="add-row-btns">
+          <button class="btn btn-secondary btn-sm" onclick="addEditorItem()">+ Přidat položku</button>
+          <button class="btn btn-sm" style="background:#f0e6f5;color:var(--purple);border:2px solid var(--purple);" onclick="addEditorSection()">+ Přidat nadpis sekce</button>
+        </div>
+      </div>
+
+      <!-- TAB: CATEGORIES -->
+      <div class="tab-content" id="tab-categories">
+        <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;">Upravte pořadí, emoji, název kategorií nebo přidejte/odstraňte celou kategorii.</p>
+        <div class="cats-list" id="catsEditorList"><div class="edit-cat-row">
+      <input type="text" class="cat-emoji-input" value="🔴" data-cidx="0" data-cfield="emoji" oninput="updateEditorCat(this)" title="Emoji">
+      <input type="text" value="Hematologie" data-cidx="0" data-cfield="label" oninput="updateEditorCat(this)" placeholder="Název kategorie">
+      <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveCat(0,-1)" title="Nahoru">↑</button>
+      <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveCat(0,1)" title="Dolů">↓</button>
+      <button class="btn btn-icon btn-danger" onclick="removeCat(0)" title="Smazat kategorii">✕</button></div><div class="edit-cat-row">
+      <input type="text" class="cat-emoji-input" value="🟠" data-cidx="1" data-cfield="emoji" oninput="updateEditorCat(this)" title="Emoji">
+      <input type="text" value="Koagulace" data-cidx="1" data-cfield="label" oninput="updateEditorCat(this)" placeholder="Název kategorie">
+      <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveCat(1,-1)" title="Nahoru">↑</button>
+      <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveCat(1,1)" title="Dolů">↓</button>
+      <button class="btn btn-icon btn-danger" onclick="removeCat(1)" title="Smazat kategorii">✕</button></div><div class="edit-cat-row">
+      <input type="text" class="cat-emoji-input" value="🟡" data-cidx="2" data-cfield="emoji" oninput="updateEditorCat(this)" title="Emoji">
+      <input type="text" value="Biochemie" data-cidx="2" data-cfield="label" oninput="updateEditorCat(this)" placeholder="Název kategorie">
+      <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveCat(2,-1)" title="Nahoru">↑</button>
+      <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveCat(2,1)" title="Dolů">↓</button>
+      <button class="btn btn-icon btn-danger" onclick="removeCat(2)" title="Smazat kategorii">✕</button></div><div class="edit-cat-row">
+      <input type="text" class="cat-emoji-input" value="🔵" data-cidx="3" data-cfield="emoji" oninput="updateEditorCat(this)" title="Emoji">
+      <input type="text" value="Moč, kultivace, infekce" data-cidx="3" data-cfield="label" oninput="updateEditorCat(this)" placeholder="Název kategorie">
+      <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveCat(3,-1)" title="Nahoru">↑</button>
+      <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveCat(3,1)" title="Dolů">↓</button>
+      <button class="btn btn-icon btn-danger" onclick="removeCat(3)" title="Smazat kategorii">✕</button></div><div class="edit-cat-row">
+      <input type="text" class="cat-emoji-input" value="🟣" data-cidx="4" data-cfield="emoji" oninput="updateEditorCat(this)" title="Emoji">
+      <input type="text" value="Kožní / Morfologie" data-cidx="4" data-cfield="label" oninput="updateEditorCat(this)" placeholder="Název kategorie">
+      <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveCat(4,-1)" title="Nahoru">↑</button>
+      <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveCat(4,1)" title="Dolů">↓</button>
+      <button class="btn btn-icon btn-danger" onclick="removeCat(4)" title="Smazat kategorii">✕</button></div><div class="edit-cat-row">
+      <input type="text" class="cat-emoji-input" value="⚪" data-cidx="5" data-cfield="emoji" oninput="updateEditorCat(this)" title="Emoji">
+      <input type="text" value="Ostatní / Speciální" data-cidx="5" data-cfield="label" oninput="updateEditorCat(this)" placeholder="Název kategorie">
+      <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveCat(5,-1)" title="Nahoru">↑</button>
+      <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveCat(5,1)" title="Dolů">↓</button>
+      <button class="btn btn-icon btn-danger" onclick="removeCat(5)" title="Smazat kategorii">✕</button></div></div>
+        <button class="btn btn-secondary btn-sm" onclick="addEditorCat()">+ Přidat kategorii</button>
+      </div>
+
+      <!-- TAB: PRESETS -->
+      <div class="tab-content active" id="tab-presets">
+        <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;">Každá předvolba obsahuje název a seznam hodnot (val) položek oddělených čárkou a novým řádkem.</p>
+        <div class="presets-list" id="presetsEditorList"><div class="preset-editor-row">
+      <div class="preset-row-header">
+        <input type="text" value="Běžné sledování" data-pidx="0" data-pfield="label" oninput="updatePreset(this)" placeholder="Název předvolby" style="flex:1;">
+        <input type="text" value="Běžné sledování" data-pidx="0" data-pfield="context" oninput="updatePreset(this)" placeholder="Kontext" style="flex:1;">
+        <button class="btn btn-icon btn-danger" onclick="removePreset(0)" title="Smazat">✕</button>
+      </div>
+      <div class="preset-items-editor">
+        <div class="pi-label">Položky (jedna per řádek, přesně jak je val):</div>
+        <textarea data-pidx="0" data-pfield="items_raw" oninput="updatePreset(this)">KO
+dif. aut.
+gly, Na, K, Cl, urea, krea, LDH, k. moč, bili, bili konj., ALT, AST, GMT, ALP, CRP</textarea>
+        <div class="pi-label" style="margin-top:6px;">Doplňující text (extra):</div>
+        <input type="text" value="" data-pidx="0" data-pfield="extra" oninput="updatePreset(this)" placeholder="Např. flexila před CT">
+      </div></div><div class="preset-editor-row">
+      <div class="preset-row-header">
+        <input type="text" value="Běžné + CT" data-pidx="1" data-pfield="label" oninput="updatePreset(this)" placeholder="Název předvolby" style="flex:1;">
+        <input type="text" value="Běžné sledování" data-pidx="1" data-pfield="context" oninput="updatePreset(this)" placeholder="Kontext" style="flex:1;">
+        <button class="btn btn-icon btn-danger" onclick="removePreset(1)" title="Smazat">✕</button>
+      </div>
+      <div class="preset-items-editor">
+        <div class="pi-label">Položky (jedna per řádek, přesně jak je val):</div>
+        <textarea data-pidx="1" data-pfield="items_raw" oninput="updatePreset(this)">KO
+dif. aut.
+gly, Na, K, Cl, urea, krea, LDH, k. moč, bili, bili konj., ALT, AST, GMT, ALP, CRP</textarea>
+        <div class="pi-label" style="margin-top:6px;">Doplňující text (extra):</div>
+        <input type="text" value="flexila či napíchnutí portu před CT" data-pidx="1" data-pfield="extra" oninput="updatePreset(this)" placeholder="Např. flexila před CT">
+      </div></div><div class="preset-editor-row">
+      <div class="preset-row-header">
+        <input type="text" value="Po léčbě CLL" data-pidx="2" data-pfield="label" oninput="updatePreset(this)" placeholder="Název předvolby" style="flex:1;">
+        <input type="text" value="Po léčbě" data-pidx="2" data-pfield="context" oninput="updatePreset(this)" placeholder="Kontext" style="flex:1;">
+        <button class="btn btn-icon btn-danger" onclick="removePreset(2)" title="Smazat">✕</button>
+      </div>
+      <div class="preset-items-editor">
+        <div class="pi-label">Položky (jedna per řádek, přesně jak je val):</div>
+        <textarea data-pidx="2" data-pfield="items_raw" oninput="updatePreset(this)">dif. aut.
+dif. man.
+gly, Na, K, Cl, urea, krea, LDH, k. moč, bili, bili konj., ALT, AST, GMT, ALP, CRP
+IgG
+imunofenotypizace perif. krve</textarea>
+        <div class="pi-label" style="margin-top:6px;">Doplňující text (extra):</div>
+        <input type="text" value="zajištění žilního přístupu před CT" data-pidx="2" data-pfield="extra" oninput="updatePreset(this)" placeholder="Např. flexila před CT">
+      </div></div><div class="preset-editor-row">
+      <div class="preset-row-header">
+        <input type="text" value="Před chemoterapií" data-pidx="3" data-pfield="label" oninput="updatePreset(this)" placeholder="Název předvolby" style="flex:1;">
+        <input type="text" value="Před chemoterapií" data-pidx="3" data-pfield="context" oninput="updatePreset(this)" placeholder="Kontext" style="flex:1;">
+        <button class="btn btn-icon btn-danger" onclick="removePreset(3)" title="Smazat">✕</button>
+      </div>
+      <div class="preset-items-editor">
+        <div class="pi-label">Položky (jedna per řádek, přesně jak je val):</div>
+        <textarea data-pidx="3" data-pfield="items_raw" oninput="updatePreset(this)">KO
+dif. aut.
+INR, APTT
+gly, Na, K, Cl, urea, krea, LDH, k. moč, bili, bili konj., ALT, AST, GMT, ALP, CRP
+Ca, Cai, Mg, P, celková bílkovina, albumin</textarea>
+        <div class="pi-label" style="margin-top:6px;">Doplňující text (extra):</div>
+        <input type="text" value="" data-pidx="3" data-pfield="extra" oninput="updatePreset(this)" placeholder="Např. flexila před CT">
+      </div></div></div>
+        <button class="btn btn-secondary btn-sm" onclick="addEditorPreset()">+ Přidat předvolbu</button>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="resetToDefaults()">Obnovit výchozí</button>
+      <button class="btn btn-secondary" onclick="closeEditor()">Zrušit</button>
+      <button class="btn btn-primary" onclick="saveEditor()">💾 Uložit změny</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== EXPORT MODAL ===== -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal" style="max-width:820px;">
+    <div class="modal-header">
+      <h2>📦 Export kódu – připraveno pro GitHub</h2>
+      <button class="modal-close" onclick="closeExport()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0;">
+      <div style="background:#1e2a3a;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div style="color:#aac4f5;font-size:0.82rem;">
+          Aktuální konfigurace je <strong style="color:white;">vložena do DEFAULT_DATA</strong> – stačí zkopírovat a commitnout jako <code style="background:#0d1b2a;padding:2px 6px;border-radius:3px;font-size:0.80rem;">odbery_generator.html</code>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0;">
+          <button class="btn btn-success btn-sm" onclick="copyExportCode()">📋 Kopírovat vše</button>
+          <button class="btn btn-white btn-sm" onclick="downloadExportCode()">⬇️ Stáhnout .html</button>
+        </div>
+      </div>
+      <div style="position:relative;">
+        <textarea id="exportCodeArea" readonly="" style="width:100%;height:60vh;font-family:'Cascadia Code','Consolas','Courier New',monospace;
+                 font-size:0.78rem;line-height:1.5;background:#0d1b2a;color:#c9d8f0;
+                 border:none;padding:16px 18px;resize:none;outline:none;display:block;"></textarea>
+        <div id="exportCopyFb" style="display:none;position:absolute;top:12px;right:16px;
+          background:var(--green);color:white;padding:4px 12px;border-radius:4px;font-size:0.80rem;font-weight:700;">
+          ✓ Zkopírováno!
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <span style="font-size:0.78rem;color:var(--text-muted);">Tip: GitHub → váš repozitář → přetáhněte soubor nebo vložte obsah do editoru → Commit changes</span>
+      <button class="btn btn-secondary" onclick="closeExport()">Zavřít</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="confirm-dialog" id="confirmDialog">
+  <div class="confirm-box">
+    <h3 id="confirmTitle">Opravdu?</h3>
+    <p id="confirmMsg"></p>
+    <div class="confirm-btns">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Zrušit</button>
+      <button class="btn btn-danger" id="confirmOkBtn">Potvrdit</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================== DEFAULT DATA =====================
+const DEFAULT_DATA = {
+  "categories": [
+    {
+      "id": "hemat",
+      "emoji": "🔴",
+      "label": "Hematologie",
+      "rows": [
+        {
+          "type": "item",
+          "val": "KO",
+          "label": "KO"
+        },
+        {
+          "type": "item",
+          "val": "dif. aut.",
+          "label": "dif. aut. (diferenciální rozpočet automatický)"
+        },
+        {
+          "type": "item",
+          "val": "dif. man.",
+          "label": "dif. man. (diferenciální rozpočet manuální)"
+        },
+        {
+          "type": "item",
+          "val": "retikulocyty",
+          "label": "retikulocyty"
+        },
+        {
+          "type": "item",
+          "val": "schistocyty",
+          "label": "schistocyty"
+        },
+        {
+          "type": "item",
+          "val": "IPF",
+          "label": "IPF (immature platelet fraction)"
+        }
+      ]
+    },
+    {
+      "id": "koag",
+      "emoji": "🟠",
+      "label": "Koagulace",
+      "rows": [
+        {
+          "type": "item",
+          "val": "INR, APTT",
+          "label": "INR, APTT"
+        },
+        {
+          "type": "item",
+          "val": "FBG, D-dimery, AT3",
+          "label": "FBG, D-dimery, AT3"
+        },
+        {
+          "type": "item",
+          "val": "Rivaroxaban – monitoring léčby",
+          "label": "Rivaroxaban – monitoring léčby"
+        },
+        {
+          "type": "item",
+          "val": "Apixaban – monitoring léčby",
+          "label": "Apixaban – monitoring léčby"
+        },
+        {
+          "type": "item",
+          "val": "Edoxaban – monitoring léčby",
+          "label": "Edoxaban – monitoring léčby"
+        },
+        {
+          "type": "item",
+          "val": "Dabigatran – monitoring léčby",
+          "label": "Dabigatran – monitoring léčby"
+        },
+        {
+          "type": "item",
+          "val": "PT korekce v čase 0 a po 1h",
+          "label": "PT korekce v čase 0 a po 1h"
+        },
+        {
+          "type": "item",
+          "val": "APTT korekce v čase 0 a po 1h",
+          "label": "APTT korekce v čase 0 a po 1h"
+        }
+      ]
+    },
+    {
+      "id": "bio",
+      "emoji": "🟡",
+      "label": "Biochemie",
+      "rows": [
+        {
+          "type": "section",
+          "label": "Základní panel"
+        },
+        {
+          "type": "item",
+          "val": "gly, Na, K, Cl, urea, krea, LDH, k. moč, bili, bili konj., ALT, AST, GMT, ALP, CRP",
+          "label": "gly, Na, K, Cl, urea, krea, LDH, k. moč, bili, bili konj., ALT, AST, GMT, ALP, CRP"
+        },
+        {
+          "type": "item",
+          "val": "Ca, Cai, Mg, P, celková bílkovina, albumin",
+          "label": "Ca, Cai, Mg, P, celková bílkovina, albumin"
+        },
+        {
+          "type": "item",
+          "val": "TSH",
+          "label": "TSH"
+        },
+        {
+          "type": "item",
+          "val": "TSH, fT3, fT4",
+          "label": "TSH, fT3, fT4"
+        },
+        {
+          "type": "section",
+          "label": "Anémie"
+        },
+        {
+          "type": "item",
+          "val": "kys. listová, vit. B12",
+          "label": "kys. listová, vit. B12"
+        },
+        {
+          "type": "item",
+          "val": "s_Fe, FeVK, transferin, feritin",
+          "label": "s_Fe, FeVK, transferin, feritin"
+        },
+        {
+          "type": "item",
+          "val": "Coombsův přímý a nepřímý test",
+          "label": "Coombsův přímý a nepřímý test"
+        },
+        {
+          "type": "item",
+          "val": "krevní skupina",
+          "label": "krevní skupina"
+        },
+        {
+          "type": "item",
+          "val": "haptoglobin",
+          "label": "haptoglobin"
+        },
+        {
+          "type": "section",
+          "label": "Staging a restaging"
+        },
+        {
+          "type": "item",
+          "val": "beta-2-mikroglobulin",
+          "label": "beta-2-mikroglobulin"
+        },
+        {
+          "type": "item",
+          "val": "anti HBc Ig total + IgM, HBsAg, anti HCV Ig, anti HIV 1,2",
+          "label": "anti HBc Ig total + IgM, HBsAg, anti HCV Ig, anti HIV 1,2"
+        },
+        {
+          "type": "item",
+          "val": "anti CMV IgG",
+          "label": "anti CMV IgG"
+        },
+        {
+          "type": "item",
+          "val": "IgG, IgM, IgA",
+          "label": "IgG, IgM, IgA"
+        },
+        {
+          "type": "item",
+          "val": "IgG",
+          "label": "IgG (samotné)"
+        },
+        {
+          "type": "item",
+          "val": "HBsAg, anti-HBs, HBeAg, anti-HBe, anti-HBc total, anti-HBc IgG, IgM, PCR HBV",
+          "label": "HBsAg, anti-HBs, HBeAg, anti-HBe, anti-HBc total, anti-HBc IgG, IgM, PCR HBV"
+        },
+        {
+          "type": "item",
+          "val": "kvantif. paraproteinu (sérum), lehké řetězce (FLC)",
+          "label": "kvantif. paraproteinu (sérum), lehké řetězce (FLC)"
+        }
+      ]
+    },
+    {
+      "id": "moc",
+      "emoji": "🔵",
+      "label": "Moč, kultivace, infekce",
+      "rows": [
+        {
+          "type": "item",
+          "val": "moč chemicky + sediment",
+          "label": "moč chemicky + sediment"
+        },
+        {
+          "type": "item",
+          "val": "výtěr krku K+C, moč K+C",
+          "label": "výtěr krku K+C, moč K+C"
+        },
+        {
+          "type": "item",
+          "val": "hemokultury 1+1",
+          "label": "hemokultury 1+1"
+        },
+        {
+          "type": "item",
+          "val": "Clostridiový toxin a antigen",
+          "label": "Clostridiový toxin a antigen"
+        },
+        {
+          "type": "item",
+          "val": "aspergilový galaktomanan z krve",
+          "label": "aspergilový galaktomanan z krve"
+        },
+        {
+          "type": "item",
+          "val": "Beta-D-glukan",
+          "label": "Beta-D-glukan"
+        },
+        {
+          "type": "item",
+          "val": "adenoviry, rotaviry",
+          "label": "adenoviry, rotaviry"
+        },
+        {
+          "type": "item",
+          "val": "PCR CMV",
+          "label": "PCR CMV"
+        },
+        {
+          "type": "item",
+          "val": "PCR EBV",
+          "label": "PCR EBV"
+        },
+        {
+          "type": "item",
+          "val": "PCR BK virus",
+          "label": "PCR BK virus"
+        },
+        {
+          "type": "item",
+          "val": "PCR HBV",
+          "label": "PCR HBV"
+        },
+        {
+          "type": "item",
+          "val": "PCR HCV",
+          "label": "PCR HCV"
+        },
+        {
+          "type": "item",
+          "val": "PCR HEV",
+          "label": "PCR HEV"
+        },
+        {
+          "type": "item",
+          "val": "respirační panel",
+          "label": "respirační panel"
+        }
+      ]
+    },
+    {
+      "id": "kozni",
+      "emoji": "🟣",
+      "label": "Kožní / Morfologie",
+      "rows": [
+        {
+          "type": "item",
+          "val": "přímá imunofluorescence",
+          "label": "přímá imunofluorescence"
+        },
+        {
+          "type": "section",
+          "label": "Sternální punkce"
+        },
+        {
+          "type": "item",
+          "val": "sternální punkce (cytologie, IF)",
+          "label": "sternální punkce (cytologie, IF)"
+        },
+        {
+          "type": "item",
+          "val": "sternální punkce (cytologie, IF, karyotyp)",
+          "label": "sternální punkce (cytologie, IF, karyotyp)"
+        },
+        {
+          "type": "section",
+          "label": "Ostatní morfologie"
+        },
+        {
+          "type": "item",
+          "val": "předtransplantační odběry",
+          "label": "předtransplantační odběry"
+        },
+        {
+          "type": "item",
+          "val": "imunofenotypizace perif. krve",
+          "label": "imunofenotypizace perif. krve"
+        },
+        {
+          "type": "section",
+          "label": "Hladiny léků"
+        },
+        {
+          "type": "item",
+          "val": "hladina vorikonazolu",
+          "label": "hladina vorikonazolu"
+        },
+        {
+          "type": "item",
+          "val": "hladina posakonazolu",
+          "label": "hladina posakonazolu"
+        },
+        {
+          "type": "item",
+          "val": "hladina FK-506",
+          "label": "hladina FK-506"
+        }
+      ]
+    },
+    {
+      "id": "ostatni",
+      "emoji": "⚪",
+      "label": "Ostatní / Speciální",
+      "rows": [
+        {
+          "type": "item",
+          "val": "elastáza ve stolici (pankr. funkce)",
+          "label": "elastáza ve stolici (pankr. funkce)"
+        },
+        {
+          "type": "item",
+          "val": "amoniak (jaterní selhání)",
+          "label": "amoniak (jaterní selhání)"
+        },
+        {
+          "type": "item",
+          "val": "Frakční exkrece sodíku",
+          "label": "Frakční exkrece sodíku (prerenální RI)"
+        },
+        {
+          "type": "item",
+          "val": "ACR (albumin/kreatinin_U)",
+          "label": "ACR – albumin/kreatinin_U"
+        },
+        {
+          "type": "item",
+          "val": "sérová tryptáza",
+          "label": "sérová tryptáza"
+        },
+        {
+          "type": "item",
+          "val": "myoglobin, CK",
+          "label": "myoglobin, CK"
+        },
+        {
+          "type": "item",
+          "val": "kalprotektin ze stolice",
+          "label": "kalprotektin ze stolice"
+        },
+        {
+          "type": "item",
+          "val": "Doppler UZ jater, alfa-fetoprotein",
+          "label": "Doppler UZ jater, alfa-fetoprotein (hepatitida)"
+        },
+        {
+          "type": "item",
+          "val": "c-kit D816, c-kit exon 17,8,7 (žádanka MB, ÚKBD)",
+          "label": "c-kit D816, c-kit exon 17,8,7 (žádanka MB, ÚKBD)"
+        },
+        {
+          "type": "item",
+          "val": "etylglukoronid",
+          "label": "etylglukoronid"
+        },
+        {
+          "type": "item",
+          "val": "NT-proBNP",
+          "label": "NT-proBNP"
+        },
+        {
+          "type": "item",
+          "val": "Cystatin C",
+          "label": "Cystatin C"
+        },
+        {
+          "type": "item",
+          "val": "Parathormon, 1,25 (OH)2 vit. D, 25 (OH) vit. D",
+          "label": "Parathormon, 1,25 (OH)2 vit. D, 25 (OH) vit. D"
+        },
+        {
+          "type": "item",
+          "val": "IL-6 (autoimunity)",
+          "label": "IL-6 (autoimunity)"
+        },
+        {
+          "type": "item",
+          "val": "sIL-2 receptor (sCD25)",
+          "label": "sIL-2 receptor (sCD25)"
+        },
+        {
+          "type": "section",
+          "label": "Speciální CLL"
+        },
+        {
+          "type": "item",
+          "val": "CLL prognostické ukazatele (zápis do amb. k.)",
+          "label": "CLL prognostické ukazatele (zápis do amb. k.)"
+        },
+        {
+          "type": "item",
+          "val": "CLL cytogenetika",
+          "label": "CLL cytogenetika"
+        },
+        {
+          "type": "item",
+          "val": "CIRS",
+          "label": "CIRS"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "id": "bezne",
+      "label": "Běžné sledování",
+      "context": "Běžné sledování",
+      "extra": "",
+      "items": [
+        "KO",
+        "dif. aut.",
+        "gly, Na, K, Cl, urea, krea, LDH, k. moč, bili, bili konj., ALT, AST, GMT, ALP, CRP"
+      ]
+    },
+    {
+      "id": "bezne_ct",
+      "label": "Běžné + CT",
+      "context": "Běžné sledování",
+      "extra": "flexila či napíchnutí portu před CT",
+      "items": [
+        "KO",
+        "dif. aut.",
+        "gly, Na, K, Cl, urea, krea, LDH, k. moč, bili, bili konj., ALT, AST, GMT, ALP, CRP"
+      ]
+    },
+    {
+      "id": "po_lecbe_cll",
+      "label": "Po léčbě CLL",
+      "context": "Po léčbě",
+      "extra": "zajištění žilního přístupu před CT",
+      "items": [
+        "dif. aut.",
+        "dif. man.",
+        "gly, Na, K, Cl, urea, krea, LDH, k. moč, bili, bili konj., ALT, AST, GMT, ALP, CRP",
+        "IgG",
+        "imunofenotypizace perif. krve"
+      ]
+    },
+    {
+      "id": "pred_chemo",
+      "label": "Před chemoterapií",
+      "context": "Před chemoterapií",
+      "extra": "",
+      "items": [
+        "KO",
+        "dif. aut.",
+        "INR, APTT",
+        "gly, Na, K, Cl, urea, krea, LDH, k. moč, bili, bili konj., ALT, AST, GMT, ALP, CRP",
+        "Ca, Cai, Mg, P, celková bílkovina, albumin"
+      ]
+    }
+  ]
+};
+
+// ===================== STATE =====================
+let appData = null;        // loaded from localStorage or defaults
+let checked = {};          // {val: true/false}
+let editData = null;       // deep clone for editor
+
+function loadData() {
+  try {
+    const s = localStorage.getItem('odbery_data');
+    appData = s ? JSON.parse(s) : deepClone(DEFAULT_DATA);
+  } catch(e) { appData = deepClone(DEFAULT_DATA); }
+}
+function saveData() {
+  localStorage.setItem('odbery_data', JSON.stringify(appData));
+}
+function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+
+// ===================== RENDER MAIN UI =====================
+function renderAll() {
+  renderPresets();
+  renderCategories();
+  generateText();
+}
+
+function renderPresets() {
+  const container = document.getElementById('presetButtons');
+  container.innerHTML = '';
+  appData.presets.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn';
+    btn.textContent = p.label;
+    btn.onclick = () => applyPreset(p);
+    container.appendChild(btn);
+  });
+}
+
+function renderCategories() {
+  const panel = document.getElementById('categoriesPanel');
+  panel.innerHTML = '';
+  appData.categories.forEach(cat => {
+    const card = document.createElement('div');
+    card.className = 'category-card';
+    card.innerHTML = `
+      <div class="category-header">
+        <div class="category-header-left">
+          <span>${cat.emoji} ${cat.label}</span>
+        </div>
+        <div class="category-header-right">
+          <button class="toggle-all-btn" onclick="toggleAll('${cat.id}')">Vybrat vše</button>
+        </div>
+      </div>
+      <div class="category-body" id="cat_${cat.id}"></div>
+    `;
+    panel.appendChild(card);
+    const body = document.getElementById('cat_' + cat.id);
+    let rowIdx = 0;
+    cat.rows.forEach(row => {
+      if (row.type === 'section') {
+        const d = document.createElement('div');
+        d.className = 'section-label';
+        d.textContent = row.label;
+        body.appendChild(d);
+        rowIdx = 0;
+      } else {
+        rowIdx++;
+        const d = document.createElement('div');
+        d.className = 'item-row' + (checked[row.val] ? ' checked' : '');
+        d.setAttribute('data-val', row.val);
+        d.setAttribute('data-cat', cat.id);
+        d.innerHTML = `<input type="checkbox" ${checked[row.val] ? 'checked' : ''} data-val="${escHtml(row.val)}" data-cat="${cat.id}"><label>${escHtml(row.label)}</label>`;
+        d.onclick = function(e) {
+          if (e.target.tagName === 'INPUT') return; // handled below
+          const cb = this.querySelector('input');
+          cb.checked = !cb.checked;
+          onCheckChange(cb);
+        };
+        d.querySelector('input').onchange = function() { onCheckChange(this); };
+        body.appendChild(d);
+      }
+    });
+  });
+}
+
+function onCheckChange(cb) {
+  const val = cb.dataset.val;
+  checked[val] = cb.checked;
+  cb.closest('.item-row').classList.toggle('checked', cb.checked);
+  checkImunoCard();
+  generateText();
+}
+
+function toggleAll(catId) {
+  const cat = appData.categories.find(c => c.id === catId);
+  if (!cat) return;
+  const vals = cat.rows.filter(r => r.type === 'item').map(r => r.val);
+  const anyUnchecked = vals.some(v => !checked[v]);
+  vals.forEach(v => checked[v] = anyUnchecked);
+  renderCategories();
+  checkImunoCard();
+  generateText();
+}
+
+function checkImunoCard() {
+  const hasImuno = Object.keys(checked).some(v => v === 'imunofenotypizace perif. krve' && checked[v]);
+  document.getElementById('imunoCard').style.display = hasImuno ? '' : 'none';
+  if (!hasImuno) document.getElementById('imunoFenoCLL').checked = false;
+}
+
+function generateText() {
+  const name = document.getElementById('patientName').value.trim();
+  const dob = document.getElementById('patientDOB').value.trim();
+  const diag = document.getElementById('diagnosis').value.trim();
+  const ctx = document.getElementById('context').value;
+  const note = document.getElementById('extraNote').value.trim();
+  const imunoFeno = document.getElementById('imunoFenoCLL').checked;
+
+  const selectedVals = Object.keys(checked).filter(v => checked[v]);
+  document.getElementById('selectedCount').textContent = selectedVals.length + ' položek';
+
+  if (selectedVals.length === 0 && !name && !ctx && !note) {
+    document.getElementById('outputText').value = '';
+    return;
+  }
+
+  let lines = [];
+  let header = 'Prosím o odběry';
+  if (name || dob || diag) {
+    let id = [];
+    if (name) id.push(name);
+    if (dob) id.push(`(*${dob})`);
+    if (diag) id.push(`– ${diag}`);
+    header += ` pacienta: ${id.join(' ')}`;
+  }
+  if (ctx) header += `\nIndikace / kontext: ${ctx}`;
+  lines.push(header);
+  lines.push('');
+
+  appData.categories.forEach(cat => {
+    const vals = cat.rows.filter(r => r.type === 'item' && checked[r.val]).map(r => r.val);
+    if (vals.length > 0) lines.push(`${cat.label}: ${vals.join(', ')}`);
+  });
+
+  if (imunoFeno) {
+    lines.push('');
+    lines.push('Poznámka k imunofenotypizaci: Prosím o hodnocení vzorku u pacienta s CLL – prosím také o sdělení exprese CD5, CD19, CD20, CD23, restrikce lehkých řetězců v závěru! + navíc CD49d, pokud nebylo měřeno v minulosti.');
+  }
+  if (note) { lines.push(''); lines.push(`Doplňující instrukce: ${note}`); }
+
+  document.getElementById('outputText').value = lines.join('\n');
+}
+
+function applyPreset(p) {
+  checked = {};
+  (p.items || []).forEach(v => checked[v] = true);
+  document.getElementById('context').value = p.context || '';
+  document.getElementById('extraNote').value = p.extra || '';
+  renderCategories();
+  checkImunoCard();
+  generateText();
+}
+
+function resetAll() {
+  checked = {};
+  document.getElementById('patientName').value = '';
+  document.getElementById('patientDOB').value = '';
+  document.getElementById('diagnosis').value = '';
+  document.getElementById('context').value = '';
+  document.getElementById('extraNote').value = '';
+  document.getElementById('imunoFenoCLL').checked = false;
+  renderCategories();
+  checkImunoCard();
+  generateText();
+}
+
+function copyText() {
+  const ta = document.getElementById('outputText');
+  if (!ta.value) return;
+  navigator.clipboard.writeText(ta.value).then(() => {
+    const fb = document.getElementById('copyFeedback');
+    fb.classList.add('show');
+    setTimeout(() => fb.classList.remove('show'), 2000);
+  });
+}
+
+// ===================== EDITOR =====================
+let currentEditorTab = 'items';
+
+function openEditor() {
+  editData = deepClone(appData);
+  renderEditorCatSelect();
+  renderItemsEditor();
+  renderCatsEditor();
+  renderPresetsEditor();
+  document.getElementById('editorModal').classList.add('open');
+}
+function closeEditor() {
+  document.getElementById('editorModal').classList.remove('open');
+}
+function switchTab(tab) {
+  currentEditorTab = tab;
+  document.querySelectorAll('.editor-tab').forEach((t,i) => {
+    const tabs = ['items','categories','presets'];
+    t.classList.toggle('active', tabs[i] === tab);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function saveEditor() {
+  // collect items tab
+  collectItemsFromEditor();
+  // collect cats tab
+  collectCatsFromEditor();
+  // collect presets tab
+  collectPresetsFromEditor();
+
+  appData = deepClone(editData);
+  saveData();
+  renderAll();
+  closeEditor();
+  showToast('✓ Změny uloženy');
+}
+
+// ---- ITEMS TAB ----
+function renderEditorCatSelect() {
+  const sel = document.getElementById('editCatSelect');
+  sel.innerHTML = editData.categories.map(c =>
+    `<option value="${c.id}">${c.emoji} ${c.label}</option>`
+  ).join('');
+}
+function renderItemsEditor() {
+  const catId = document.getElementById('editCatSelect').value;
+  const cat = editData.categories.find(c => c.id === catId);
+  const list = document.getElementById('itemsEditorList');
+  list.innerHTML = '';
+  if (!cat) return;
+  cat.rows.forEach((row, idx) => {
+    const d = document.createElement('div');
+    if (row.type === 'section') {
+      d.className = 'section-divider-row';
+      d.innerHTML = `
+        <span class="drag-handle" title="Přesunout">⠿</span>
+        <span class="type-badge section">Nadpis</span>
+        <input type="text" value="${escHtml(row.label)}" placeholder="Název sekce" data-idx="${idx}" data-field="label" oninput="updateEditorRow(this)">
+        <button class="btn btn-icon" style="color:var(--accent);background:#fff;border:1px solid var(--accent);" onclick="moveEditorRow(${idx},-1)" title="Nahoru">↑</button>
+        <button class="btn btn-icon" style="color:var(--accent);background:#fff;border:1px solid var(--accent);" onclick="moveEditorRow(${idx},1)" title="Dolů">↓</button>
+        <button class="btn btn-icon btn-danger" onclick="removeEditorRow(${idx})" title="Smazat">✕</button>`;
+    } else {
+      d.className = 'edit-item-row';
+      d.innerHTML = `
+        <span class="drag-handle" title="Přesunout">⠿</span>
+        <span class="type-badge item">Položka</span>
+        <input type="text" value="${escHtml(row.label)}" placeholder="Popisek (zobrazený)" data-idx="${idx}" data-field="label" oninput="updateEditorRow(this)" style="flex:2;">
+        <input type="text" value="${escHtml(row.val)}" placeholder="Hodnota (do textu žádanky)" data-idx="${idx}" data-field="val" oninput="updateEditorRow(this)" style="flex:2;">
+        <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveEditorRow(${idx},-1)" title="Nahoru">↑</button>
+        <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveEditorRow(${idx},1)" title="Dolů">↓</button>
+        <button class="btn btn-icon btn-danger" onclick="removeEditorRow(${idx})" title="Smazat">✕</button>`;
+    }
+    list.appendChild(d);
+  });
+}
+function updateEditorRow(input) {
+  const catId = document.getElementById('editCatSelect').value;
+  const cat = editData.categories.find(c => c.id === catId);
+  if (!cat) return;
+  const idx = parseInt(input.dataset.idx);
+  cat.rows[idx][input.dataset.field] = input.value;
+}
+function moveEditorRow(idx, dir) {
+  collectItemsFromEditor();
+  const catId = document.getElementById('editCatSelect').value;
+  const cat = editData.categories.find(c => c.id === catId);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= cat.rows.length) return;
+  [cat.rows[idx], cat.rows[newIdx]] = [cat.rows[newIdx], cat.rows[idx]];
+  renderItemsEditor();
+}
+function removeEditorRow(idx) {
+  collectItemsFromEditor();
+  const catId = document.getElementById('editCatSelect').value;
+  const cat = editData.categories.find(c => c.id === catId);
+  cat.rows.splice(idx, 1);
+  renderItemsEditor();
+}
+function addEditorItem() {
+  collectItemsFromEditor();
+  const catId = document.getElementById('editCatSelect').value;
+  const cat = editData.categories.find(c => c.id === catId);
+  cat.rows.push({type:'item', val:'nová položka', label:'nová položka'});
+  renderItemsEditor();
+  // scroll to bottom
+  const list = document.getElementById('itemsEditorList');
+  list.lastElementChild && list.lastElementChild.querySelector('input') && list.lastElementChild.querySelectorAll('input')[0].focus();
+}
+function addEditorSection() {
+  collectItemsFromEditor();
+  const catId = document.getElementById('editCatSelect').value;
+  const cat = editData.categories.find(c => c.id === catId);
+  cat.rows.push({type:'section', label:'Nová sekce'});
+  renderItemsEditor();
+}
+function collectItemsFromEditor() {
+  // reads current DOM input values back into editData
+  const catId = document.getElementById('editCatSelect').value;
+  const cat = editData.categories.find(c => c.id === catId);
+  if (!cat) return;
+  document.querySelectorAll('#itemsEditorList [data-idx][data-field]').forEach(inp => {
+    const idx = parseInt(inp.dataset.idx);
+    if (cat.rows[idx]) cat.rows[idx][inp.dataset.field] = inp.value;
+  });
+}
+
+// ---- CATEGORIES TAB ----
+function renderCatsEditor() {
+  const list = document.getElementById('catsEditorList');
+  list.innerHTML = '';
+  editData.categories.forEach((cat, idx) => {
+    const d = document.createElement('div');
+    d.className = 'edit-cat-row';
+    d.innerHTML = `
+      <input type="text" class="cat-emoji-input" value="${escHtml(cat.emoji)}" data-cidx="${idx}" data-cfield="emoji" oninput="updateEditorCat(this)" title="Emoji">
+      <input type="text" value="${escHtml(cat.label)}" data-cidx="${idx}" data-cfield="label" oninput="updateEditorCat(this)" placeholder="Název kategorie">
+      <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveCat(${idx},-1)" title="Nahoru">↑</button>
+      <button class="btn btn-icon" style="background:#f2f4f8;color:#555;border:1px solid var(--border);" onclick="moveCat(${idx},1)" title="Dolů">↓</button>
+      <button class="btn btn-icon btn-danger" onclick="removeCat(${idx})" title="Smazat kategorii">✕</button>`;
+    list.appendChild(d);
+  });
+}
+function updateEditorCat(inp) {
+  editData.categories[inp.dataset.cidx][inp.dataset.cfield] = inp.value;
+}
+function collectCatsFromEditor() {
+  document.querySelectorAll('#catsEditorList [data-cidx][data-cfield]').forEach(inp => {
+    const idx = parseInt(inp.dataset.cidx);
+    if (editData.categories[idx]) editData.categories[idx][inp.dataset.cfield] = inp.value;
+  });
+}
+function moveCat(idx, dir) {
+  collectCatsFromEditor();
+  const cats = editData.categories;
+  const ni = idx + dir;
+  if (ni < 0 || ni >= cats.length) return;
+  [cats[idx], cats[ni]] = [cats[ni], cats[idx]];
+  renderCatsEditor();
+  renderEditorCatSelect();
+}
+function removeCat(idx) {
+  collectCatsFromEditor();
+  showConfirm('Smazat kategorii?', `Smažete kategorii "${editData.categories[idx].label}" včetně všech položek.`, () => {
+    editData.categories.splice(idx, 1);
+    renderCatsEditor();
+    renderEditorCatSelect();
+    renderItemsEditor();
+  });
+}
+function addEditorCat() {
+  collectCatsFromEditor();
+  const id = 'cat_' + Date.now();
+  editData.categories.push({id, emoji:'🔹', label:'Nová kategorie', rows:[]});
+  renderCatsEditor();
+  renderEditorCatSelect();
+  document.getElementById('editCatSelect').value = id;
+  renderItemsEditor();
+}
+
+// ---- PRESETS TAB ----
+function renderPresetsEditor() {
+  const list = document.getElementById('presetsEditorList');
+  list.innerHTML = '';
+  editData.presets.forEach((p, idx) => {
+    const d = document.createElement('div');
+    d.className = 'preset-editor-row';
+    d.innerHTML = `
+      <div class="preset-row-header">
+        <input type="text" value="${escHtml(p.label)}" data-pidx="${idx}" data-pfield="label" oninput="updatePreset(this)" placeholder="Název předvolby" style="flex:1;">
+        <input type="text" value="${escHtml(p.context||'')}" data-pidx="${idx}" data-pfield="context" oninput="updatePreset(this)" placeholder="Kontext" style="flex:1;">
+        <button class="btn btn-icon btn-danger" onclick="removePreset(${idx})" title="Smazat">✕</button>
+      </div>
+      <div class="preset-items-editor">
+        <div class="pi-label">Položky (jedna per řádek, přesně jak je val):</div>
+        <textarea data-pidx="${idx}" data-pfield="items_raw" oninput="updatePreset(this)">${(p.items||[]).join('\n')}</textarea>
+        <div class="pi-label" style="margin-top:6px;">Doplňující text (extra):</div>
+        <input type="text" value="${escHtml(p.extra||'')}" data-pidx="${idx}" data-pfield="extra" oninput="updatePreset(this)" placeholder="Např. flexila před CT">
+      </div>`;
+    list.appendChild(d);
+  });
+}
+function updatePreset(inp) {
+  const idx = parseInt(inp.dataset.pidx);
+  const field = inp.dataset.pfield;
+  if (field === 'items_raw') {
+    editData.presets[idx].items = inp.value.split('\n').map(s=>s.trim()).filter(Boolean);
+  } else {
+    editData.presets[idx][field] = inp.value;
+  }
+}
+function collectPresetsFromEditor() {
+  document.querySelectorAll('#presetsEditorList [data-pidx][data-pfield]').forEach(inp => {
+    updatePreset(inp);
+  });
+}
+function removePreset(idx) {
+  collectPresetsFromEditor();
+  editData.presets.splice(idx, 1);
+  renderPresetsEditor();
+}
+function addEditorPreset() {
+  collectPresetsFromEditor();
+  editData.presets.push({id:'p_'+Date.now(), label:'Nová předvolba', context:'', extra:'', items:[]});
+  renderPresetsEditor();
+}
+
+// ---- RESET TO DEFAULTS ----
+function resetToDefaults() {
+  showConfirm('Obnovit výchozí nastavení?', 'Všechny vlastní úpravy seznamu budou ztraceny.', () => {
+    appData = deepClone(DEFAULT_DATA);
+    saveData();
+    editData = deepClone(DEFAULT_DATA);
+    renderEditorCatSelect();
+    renderItemsEditor();
+    renderCatsEditor();
+    renderPresetsEditor();
+    showToast('Obnoveno výchozí nastavení');
+  });
+}
+
+// ===================== HELPERS =====================
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+let confirmCallback = null;
+function showConfirm(title, msg, cb) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  confirmCallback = cb;
+  document.getElementById('confirmDialog').classList.add('open');
+}
+function closeConfirm() {
+  document.getElementById('confirmDialog').classList.remove('open');
+  confirmCallback = null;
+}
+document.getElementById('confirmOkBtn').onclick = function() {
+  closeConfirm();
+  if (confirmCallback) confirmCallback();
+};
+
+// close modal on overlay click
+document.getElementById('editorModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditor();
+});
+
+// ===================== EXPORT =====================
+function openExport() {
+  const code = buildExportHtml();
+  document.getElementById('exportCodeArea').value = code;
+  document.getElementById('exportModal').classList.add('open');
+}
+function closeExport() {
+  document.getElementById('exportModal').classList.remove('open');
+}
+function copyExportCode() {
+  const ta = document.getElementById('exportCodeArea');
+  navigator.clipboard.writeText(ta.value).then(() => {
+    const fb = document.getElementById('exportCopyFb');
+    fb.style.display = 'block';
+    setTimeout(() => fb.style.display = 'none', 2000);
+  });
+}
+function downloadExportCode() {
+  const code = document.getElementById('exportCodeArea').value;
+  const blob = new Blob([code], {type:'text/html;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'odbery_generator.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function buildExportHtml() {
+  // Get current HTML source
+  const src = document.documentElement.outerHTML;
+
+  // Serialize current appData as pretty JSON
+  const dataJson = JSON.stringify(appData, null, 2);
+
+  // Replace the DEFAULT_DATA block in source with current appData
+  // The block starts with "const DEFAULT_DATA = {" and ends at the matching closing }; 
+  // We do a targeted replacement using a marker approach
+  const startMarker = 'const DEFAULT_DATA = ';
+  const startIdx = src.indexOf(startMarker);
+  if (startIdx === -1) return src; // fallback
+
+  // Find the end of the DEFAULT_DATA object - walk brackets
+  let depth = 0;
+  let endIdx = -1;
+  let inStr = false;
+  let strChar = '';
+  let i = startIdx + startMarker.length;
+  for (; i < src.length; i++) {
+    const ch = src[i];
+    if (inStr) {
+      if (ch === '\\') { i++; continue; }
+      if (ch === strChar) inStr = false;
+    } else {
+      if (ch === '"' || ch === "'") { inStr = true; strChar = ch; }
+      else if (ch === '{' || ch === '[') depth++;
+      else if (ch === '}' || ch === ']') {
+        depth--;
+        if (depth === 0) { endIdx = i; break; }
+      }
+    }
+  }
+  if (endIdx === -1) return src;
+
+  // Replace the old DEFAULT_DATA value with current appData
+  const newSrc = src.slice(0, startIdx + startMarker.length)
+    + dataJson
+    + src.slice(endIdx + 1);
+
+  return '<!DOCTYPE html>\n' + newSrc.replace(/^<!DOCTYPE html>/i, '').trimStart();
+}
+
+document.getElementById('exportModal').addEventListener('click', function(e) {
+  if (e.target === this) closeExport();
+});
+
+// ===================== INIT =====================
+loadData();
+renderAll();
+</script>
+
+
+</body></html>

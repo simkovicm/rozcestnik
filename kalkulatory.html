@@ -544,6 +544,63 @@ function calcRR() {
   setResult('rr-val', rr, 'ms', '');
 }
 
+  <!-- ═══ 6. Frakční exkrece kyseliny močové ═══ -->
+<div class="card">
+  <div class="card-head">
+    <div class="card-icon">🧫</div>
+    <div>
+      <div class="card-title">Frakční exkrece KM</div>
+      <div class="card-subtitle">FE urát — kyselina močová</div>
+    </div>
+  </div>
+  <div class="card-body">
+
+    <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:0 0 10px;display:flex;align-items:center;gap:8px;">
+      Plazma / sérum<span style="flex:1;height:1px;background:var(--border);display:block;"></span>
+    </div>
+    <div class="field">
+      <label>Kyselina močová — plazma</label>
+      <div class="unit"><input type="number" id="fe-km-pl" placeholder="300" step="0.1"><span>µmol/l</span></div>
+    </div>
+    <div class="field">
+      <label>Kreatinin — plazma</label>
+      <div class="unit"><input type="number" id="fe-krea-pl" placeholder="80" step="0.1"><span>µmol/l</span></div>
+    </div>
+
+    <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:16px 0 10px;display:flex;align-items:center;gap:8px;">
+      Moč (náhodný vzorek nebo sběr ≥4 h)<span style="flex:1;height:1px;background:var(--border);display:block;"></span>
+    </div>
+    <div class="field">
+      <label>Kyselina močová — moč</label>
+      <div class="unit"><input type="number" id="fe-km-moc" placeholder="2500" step="0.1"><span>µmol/l</span></div>
+    </div>
+    <div class="field">
+      <label>Kreatinin — moč</label>
+      <div class="unit"><input type="number" id="fe-krea-moc" placeholder="8000" step="0.1"><span>µmol/l</span></div>
+    </div>
+
+    <button class="btn-calc" onclick="calcFEKM()">Vypočítat</button>
+
+    <div class="result" id="fe-result">
+      <div>
+        <div class="result-label">FE kyseliny močové</div>
+        <div class="result-note" id="fe-note">FE = (KMmoč × Kreaplazma) / (KMplazma × Kreamoč)</div>
+      </div>
+      <div class="result-value muted" id="fe-val">—</div>
+    </div>
+
+    <div style="margin-top:12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--muted);line-height:1.7;">
+      <span style="color:var(--label);">Ref. rozmezí:</span> 4–12 % &nbsp;|&nbsp;
+      <span style="color:var(--label);">Materiál:</span> krev + moč (náhodný vzorek nebo sběr ≥4 h) &nbsp;|&nbsp;
+      <span style="color:var(--label);">Diuréza:</span> neuvádí se
+    </div>
+
+    <div class="copy-row">
+      <button class="btn-copy-result" id="fe-copy-btn" onclick="copyFE()">⎘ Kopírovat</button>
+    </div>
+  </div>
+</div>
+  
 // ── COPY RESULT ────────────────────────────────────────────────
 const COPY_LABELS = {
   cg:   'ClCr (Cockcroft–Gault)',

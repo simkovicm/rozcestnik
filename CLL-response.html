@@ -1256,7 +1256,9 @@
       // crOnly: true → zobrazit poznámku "pouze pro CR"
       bItems.push({ name: 'ANC (neutrofily)', val: anc_curr !== null ? `${anc_curr} ×10⁹/L` : '—', status: anc_status, note: anc_note, crOnly: true });
 
-      // Bone marrow — pro PR "not done" se počítá jako splněno (Table 4: PR marrow = "not done")
+      // Kostní dřeň — NENÍ B parametrem pro PR (sekce 5.2.5 definuje PR skupinu B pouze přes PLT a Hb)
+      // Table 4: "not done" je pro PR akceptovatelný stav (neblokuje PR), ale NENÍ splněným B parametrem
+      // Pro CR: normální dřeň je povinná (sekce 5.1.7)
       let marrow_status = 'na';
       const marrow_labels = {
         not_done: 'Nebyla provedena',
@@ -1265,12 +1267,16 @@
         nodules: 'Lymfoidní noduly',
         increasing: 'Nárůst CLL'
       };
-      if (marrow === 'normal')                  { B_met_PR++; B_met_CR++; marrow_status = 'met'; }
-      else if (marrow === 'not_done')            { B_met_PR++; marrow_status = 'warn'; }   // PR: not done = splněno; CR: vyžaduje biopsii
+      if (marrow === 'normal')                               { B_met_CR++; marrow_status = 'met'; }
+      // "not done": neblokuje PR, ale B_met_PR se NEzvyšuje — dřeň není PR B parametrem
+      else if (marrow === 'not_done')                        { marrow_status = 'warn'; }
       else if (marrow === 'cll_cells' || marrow === 'nodules') { marrow_status = 'warn'; }
-      else if (marrow === 'increasing')          { marrow_status = 'notmet'; }
+      else if (marrow === 'increasing')                      { marrow_status = 'notmet'; }
+      let marrow_note = null;
+      if (marrow === 'not_done') marrow_note = 'Nebyla provedena — PR není blokováno (Table 4), ale dřeň není B parametrem pro PR (sekce 5.2.5)';
+      else if (marrow === 'normal') marrow_note = 'Normální — splněno pro CR (sekce 5.1.7)';
       bItems.push({ name: 'Kostní dřeň', val: marrow_labels[marrow] || '—', status: marrow_status,
-        note: marrow === 'not_done' ? 'Nebyla provedena — pro PR splněno (Table 4 iwCLL); pro CR nutná biopsie' : null,
+        note: marrow_note,
         crOnly: false });
 
       // ---- DETERMINE RESPONSE ----

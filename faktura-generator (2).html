@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Generátor faktur</title>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
 <style>
 :root {
   --black: #111111;
@@ -174,6 +175,75 @@ body {
 }
 .icon-btn:hover { border-color: var(--sidebar-accent); color: var(--sidebar-accent); }
 .icon-btn.danger:hover { border-color: #f38ba8; color: #f38ba8; }
+
+/* Upload button */
+.btn-upload {
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  background: rgba(137,180,250,0.08);
+  color: var(--sidebar-accent);
+  border: 1.5px dashed rgba(137,180,250,0.35);
+  border-radius: 7px;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.18s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-upload:hover {
+  background: rgba(137,180,250,0.14);
+  border-color: var(--sidebar-accent);
+}
+.btn-upload.loading {
+  pointer-events: none;
+  opacity: 0.6;
+}
+.btn-upload .upload-icon { font-size: 15px; }
+
+/* Import status toast */
+.import-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 200;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.25s;
+  pointer-events: none;
+  max-width: 380px;
+}
+.import-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+.import-toast.success {
+  background: #1e3a2f;
+  color: #a6e3a1;
+  border: 1px solid rgba(166,227,161,0.25);
+}
+.import-toast.error {
+  background: #3a1e1e;
+  color: #f38ba8;
+  border: 1px solid rgba(243,139,168,0.25);
+}
+.import-toast.info {
+  background: #1e2a3a;
+  color: #89b4fa;
+  border: 1px solid rgba(137,180,250,0.25);
+}
 
 /* Buttons */
 .btn-primary {
@@ -425,13 +495,6 @@ body {
   color: var(--gray);
 }
 
-/* VS note in amount */
-.inv-vs-note {
-  font-size: 11px;
-  color: var(--gray);
-  text-align: right;
-}
-
 /* PRINT */
 @media print {
   body { display: block; background: white; }
@@ -497,6 +560,46 @@ body {
 }
 .btn-cancel:hover { color: var(--sidebar-fg); }
 
+/* Import confirm modal */
+.import-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.import-field-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+}
+.import-field-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--sidebar-accent);
+  flex-shrink: 0;
+}
+.import-field-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--sidebar-muted);
+  min-width: 70px;
+}
+.import-field-value {
+  font-size: 13px;
+  color: var(--sidebar-fg);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Scrollbar sidebar */
 .sidebar::-webkit-scrollbar { width: 4px; }
 .sidebar::-webkit-scrollbar-track { background: transparent; }
@@ -520,6 +623,11 @@ body {
   <div id="tab-nova" class="tab-panel active">
 
     <div class="sec-label">Odběratel</div>
+
+    <button class="btn-upload" id="btn-import-pdf" onclick="document.getElementById('pdf-input').click()">
+      <span class="upload-icon">📄</span> Načíst z předchozí faktury (PDF)
+    </button>
+    <input type="file" id="pdf-input" accept=".pdf" style="display:none" onchange="handlePdfImport(event)">
 
     <div class="odberatel-bar">
       <select id="odberatel-select" onchange="loadOdberatel(this.value)">
@@ -581,6 +689,7 @@ body {
 
     <button class="btn-primary" onclick="generateInvoice()">▶ Náhled faktury</button>
     <button class="btn-secondary" onclick="printInvoice()">⎙ Tisk / Uložit PDF</button>
+    <button class="btn-secondary" id="btn-email" onclick="copyEmailText()" style="margin-top:6px;" disabled>✉ Kopírovat průvodní e-mail</button>
   </div>
 
   <!-- ── TAB: PROFIL DODAVATELE ── -->
@@ -651,11 +760,27 @@ body {
       <input type="text" id="modal-nick" placeholder="AbbVie Praha">
     </div>
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">Zrušit</button>
+      <button class="btn-cancel" onclick="closeModal('modal-odberatel')">Zrušit</button>
       <button class="btn-primary" onclick="confirmSaveOdberatel()">Uložit</button>
     </div>
   </div>
 </div>
+
+<!-- ═══ MODAL: IMPORT POTVRZENÍ ═══ -->
+<div class="modal-overlay" id="modal-import">
+  <div class="modal">
+    <h3>Načtené údaje z faktury</h3>
+    <p style="font-size:12px;color:var(--sidebar-muted);margin-bottom:4px;">Vyberte, co chcete vyplnit:</p>
+    <div class="import-fields" id="import-fields"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-import')">Zrušit</button>
+      <button class="btn-primary" onclick="confirmImport()">Vyplnit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TOAST ═══ -->
+<div class="import-toast" id="import-toast"></div>
 
 <script>
 // ── STORAGE KEYS ──────────────────────────────────────────────
@@ -693,6 +818,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function todayStr() {
   return new Date().toISOString().slice(0,10);
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+function showToast(msg, type = 'info', duration = 3500) {
+  const el = document.getElementById('import-toast');
+  el.textContent = msg;
+  el.className = 'import-toast ' + type + ' show';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.remove('show'), duration);
 }
 
 // ── TABS ──────────────────────────────────────────────────────
@@ -787,8 +921,8 @@ function openSaveOdberatel() {
   setTimeout(() => document.getElementById('modal-nick').focus(), 50);
 }
 
-function closeModal() {
-  document.getElementById('modal-odberatel').classList.remove('open');
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
 }
 
 function confirmSaveOdberatel() {
@@ -802,10 +936,9 @@ function confirmSaveOdberatel() {
   list.push({ nick: nick || nazev, nazev, adresa, ico, dic });
   saveOdberateleLS(list);
   renderOdberateleSelect();
-  // auto-select nový
   const sel = document.getElementById('odberatel-select');
   sel.value = list.length - 1;
-  closeModal();
+  closeModal('modal-odberatel');
 }
 
 function deleteOdberatel() {
@@ -822,8 +955,234 @@ function deleteOdberatel() {
 
 // Klik mimo modal zavře
 document.getElementById('modal-odberatel').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
+  if (e.target === this) closeModal('modal-odberatel');
 });
+document.getElementById('modal-import').addEventListener('click', function(e) {
+  if (e.target === this) closeModal('modal-import');
+});
+
+// ── PDF IMPORT ────────────────────────────────────────────────
+let pendingImportData = null;
+
+async function handlePdfImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const btn = document.getElementById('btn-import-pdf');
+  btn.classList.add('loading');
+  btn.innerHTML = '<span class="upload-icon">⏳</span> Načítám PDF…';
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdfjsLib = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
+
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const lines = [];
+      let lastY = null;
+      for (const item of content.items) {
+        if (lastY !== null && Math.abs(item.transform[5] - lastY) > 3) {
+          lines.push('\n');
+        }
+        lines.push(item.str);
+        lastY = item.transform[5];
+      }
+      fullText += lines.join('') + '\n';
+    }
+
+    const parsed = parseFaktura(fullText);
+
+    if (!parsed.nazev && !parsed.ico) {
+      showToast('Nepodařilo se rozpoznat údaje odběratele z PDF.', 'error');
+      resetUploadBtn();
+      return;
+    }
+
+    // Zobrazíme modal s nalezenými údaji
+    pendingImportData = parsed;
+    showImportModal(parsed);
+
+  } catch (err) {
+    console.error('PDF import error:', err);
+    showToast('Chyba při čtení PDF: ' + err.message, 'error');
+  }
+
+  resetUploadBtn();
+}
+
+function resetUploadBtn() {
+  const btn = document.getElementById('btn-import-pdf');
+  btn.classList.remove('loading');
+  btn.innerHTML = '<span class="upload-icon">📄</span> Načíst z předchozí faktury (PDF)';
+  document.getElementById('pdf-input').value = '';
+}
+
+function parseFaktura(text) {
+  const result = {
+    nazev: '',
+    adresa: '',
+    ico: '',
+    dic: '',
+    predmet: '',
+    castka: '',
+  };
+
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+  // Najdeme sekci "Odběratel:" — vše mezi "Odběratel:" a dalším klíčovým slovem
+  let odberatelStart = -1;
+  let odberatelEnd = lines.length;
+
+  for (let i = 0; i < lines.length; i++) {
+    const low = lines[i].toLowerCase();
+    if (low.includes('odběratel')) {
+      odberatelStart = i;
+    }
+    if (odberatelStart >= 0 && i > odberatelStart) {
+      if (low.includes('předmět') || low.includes('částka') || low.includes('fakturuji') || low.includes('celkem')) {
+        odberatelEnd = i;
+        break;
+      }
+    }
+  }
+
+  if (odberatelStart >= 0) {
+    const odberatelLines = lines.slice(odberatelStart + 1, odberatelEnd);
+    const addrLines = [];
+
+    for (const line of odberatelLines) {
+      // IČ
+      const icMatch = line.match(/IČ[O]?\s*:?\s*(\d{6,8})/i);
+      if (icMatch) { result.ico = icMatch[1]; continue; }
+
+      // DIČ
+      const dicMatch = line.match(/DIČ\s*:?\s*(CZ\d{6,10})/i);
+      if (dicMatch) { result.dic = dicMatch[1]; continue; }
+
+      // Přeskočit prázdné a labely
+      if (/^(odběratel|vystavitel|dodavatel)\s*:?\s*$/i.test(line)) continue;
+
+      addrLines.push(line);
+    }
+
+    // První neprázdný řádek = název, zbytek = adresa
+    if (addrLines.length > 0) {
+      result.nazev = addrLines[0];
+      if (addrLines.length > 1) {
+        result.adresa = addrLines.slice(1).join('\n');
+      }
+    }
+  }
+
+  // Předmět služby
+  for (let i = 0; i < lines.length; i++) {
+    const match = lines[i].match(/Předmět\s+služby\s*:?\s*(.*)/i);
+    if (match && match[1].trim()) {
+      result.predmet = match[1].trim();
+    }
+  }
+
+  // Částka — hledáme "Fakturuji k úhradě" nebo "Částka:"
+  for (const line of lines) {
+    // Částka z řádku s "Částka:" 
+    const castkaMatch = line.match(/Částka\s*:?\s*([\d\s.,]+)\s*Kč/i);
+    if (castkaMatch) {
+      result.castka = castkaMatch[1].replace(/\s/g, '').replace(',', '.');
+    }
+  }
+
+  // Fallback: IČ a DIČ kdekoliv v textu po sekci odběratel
+  if (!result.ico) {
+    const fullText = lines.join(' ');
+    // Hledáme IČ v sekci odběratele
+    const odberatelText = lines.slice(odberatelStart, odberatelEnd).join(' ');
+    const icFallback = odberatelText.match(/IČ[O]?\s*:?\s*(\d{6,8})/i);
+    if (icFallback) result.ico = icFallback[1];
+  }
+  if (!result.dic) {
+    const odberatelText = lines.slice(odberatelStart, odberatelEnd).join(' ');
+    const dicFallback = odberatelText.match(/DIČ\s*:?\s*(CZ\d{6,10})/i);
+    if (dicFallback) result.dic = dicFallback[1];
+  }
+
+  return result;
+}
+
+function showImportModal(data) {
+  const container = document.getElementById('import-fields');
+  const fields = [
+    { key: 'nazev',   label: 'Název',   value: data.nazev },
+    { key: 'adresa',  label: 'Adresa',  value: data.adresa },
+    { key: 'ico',     label: 'IČ',      value: data.ico },
+    { key: 'dic',     label: 'DIČ',     value: data.dic },
+    { key: 'predmet', label: 'Předmět', value: data.predmet },
+    { key: 'castka',  label: 'Částka',  value: data.castka ? data.castka + ' Kč' : '' },
+  ].filter(f => f.value);
+
+  if (fields.length === 0) {
+    showToast('Nepodařilo se rozpoznat žádné údaje.', 'error');
+    return;
+  }
+
+  container.innerHTML = fields.map(f => `
+    <label class="import-field-row">
+      <input type="checkbox" data-key="${f.key}" checked>
+      <span class="import-field-label">${f.label}</span>
+      <span class="import-field-value" title="${escH(f.value)}">${escH(f.value.replace(/\n/g, ', '))}</span>
+    </label>
+  `).join('');
+
+  document.getElementById('modal-import').classList.add('open');
+}
+
+function confirmImport() {
+  if (!pendingImportData) return;
+  const checkboxes = document.querySelectorAll('#import-fields input[type="checkbox"]');
+  let count = 0;
+
+  checkboxes.forEach(cb => {
+    if (!cb.checked) return;
+    const key = cb.dataset.key;
+    const d = pendingImportData;
+
+    switch (key) {
+      case 'nazev':
+        document.getElementById('zak-nazev').value = d.nazev;
+        count++;
+        break;
+      case 'adresa':
+        document.getElementById('zak-adresa').value = d.adresa;
+        count++;
+        break;
+      case 'ico':
+        document.getElementById('zak-ico').value = d.ico;
+        count++;
+        break;
+      case 'dic':
+        document.getElementById('zak-dic').value = d.dic;
+        count++;
+        break;
+      case 'predmet':
+        document.getElementById('fakt-popis').value = d.predmet;
+        count++;
+        break;
+      case 'castka':
+        const num = parseFloat(d.castka);
+        if (!isNaN(num)) document.getElementById('fakt-castka').value = num;
+        count++;
+        break;
+    }
+  });
+
+  closeModal('modal-import');
+  pendingImportData = null;
+  showToast(`Načteno ${count} ${count === 1 ? 'pole' : count < 5 ? 'pole' : 'polí'} z faktury.`, 'success');
+}
 
 // ── ČÍSLOVÁNÍ ─────────────────────────────────────────────────
 function nextInvoiceNo(datum) {
@@ -900,6 +1259,10 @@ function generateInvoice() {
   if (nxt) setCounter(nxt.rok, nxt.poradi);
 
   renderInvoiceHTML(inv);
+
+  // Uložíme data pro e-mail a aktivujeme tlačítko
+  lastGeneratedInvoice = inv;
+  document.getElementById('btn-email').disabled = false;
 }
 
 // ── RENDER FAKTURY ────────────────────────────────────────────
@@ -990,12 +1353,55 @@ function renderInvoiceHTML(inv) {
 }
 
 // ── TISK ──────────────────────────────────────────────────────
+let lastGeneratedInvoice = null;
+
 function printInvoice() {
   if (!document.getElementById('invoice-output')) {
     alert('Nejprve vygenerujte náhled faktury.');
     return;
   }
   window.print();
+}
+
+// ── PRŮVODNÍ E-MAIL ───────────────────────────────────────────
+function copyEmailText() {
+  const inv = lastGeneratedInvoice;
+  if (!inv) {
+    alert('Nejprve vygenerujte fakturu.');
+    return;
+  }
+
+  const d = inv.dodavatel || {};
+  const jmeno = d.jmeno || 'Martin Šimkovič';
+
+  const emailText = `Dobrý den,
+
+v příloze zasílám fakturu č. ${inv.cislo} na částku ${fmtCzk(inv.castka)}.
+
+Děkuji za spolupráci.
+
+S pozdravem
+${jmeno}`;
+
+  navigator.clipboard.writeText(emailText).then(() => {
+    showToast('E-mail zkopírován do schránky ✓', 'success');
+    // Vizuální feedback na tlačítku
+    const btn = document.getElementById('btn-email');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Zkopírováno';
+    setTimeout(() => { btn.innerHTML = '✉ Kopírovat průvodní e-mail'; }, 1800);
+  }).catch(() => {
+    // Fallback — select a copy
+    const ta = document.createElement('textarea');
+    ta.value = emailText;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('E-mail zkopírován do schránky ✓', 'success');
+  });
 }
 
 // ── HISTORIE ──────────────────────────────────────────────────
@@ -1019,6 +1425,8 @@ function loadHistoryItem(id) {
   const inv = getHistory().find(h => h.id === id);
   if (!inv) return;
   renderInvoiceHTML(inv);
+  lastGeneratedInvoice = inv;
+  document.getElementById('btn-email').disabled = false;
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-nova').classList.add('active');

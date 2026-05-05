@@ -1356,11 +1356,25 @@ function renderInvoiceHTML(inv) {
 let lastGeneratedInvoice = null;
 
 function printInvoice() {
-  if (!document.getElementById('invoice-output')) {
+  if (!document.getElementById('invoice-output') || !lastGeneratedInvoice) {
     alert('Nejprve vygenerujte náhled faktury.');
     return;
   }
+
+  const inv = lastGeneratedInvoice;
+  const datumStr = inv.datum.replace(/-/g, '');
+  // Sanitizace názvu — odstranit nepovolené znaky pro soubor
+  const nazevClean = inv.zakNazev
+    .replace(/[\/\\:*?"<>|]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const fileName = `Faktura_${inv.cislo}_${datumStr} ${nazevClean}`;
+
+  const origTitle = document.title;
+  document.title = fileName;
   window.print();
+  // Vrátit zpět po tisku
+  setTimeout(() => { document.title = origTitle; }, 1000);
 }
 
 // ── PRŮVODNÍ E-MAIL ───────────────────────────────────────────

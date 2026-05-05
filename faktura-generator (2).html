@@ -689,7 +689,24 @@ body {
 
     <button class="btn-primary" onclick="generateInvoice()">▶ Náhled faktury</button>
     <button class="btn-secondary" onclick="printInvoice()">⎙ Tisk / Uložit PDF</button>
-    <button class="btn-secondary" id="btn-email" onclick="copyEmailText()" style="margin-top:6px;" disabled>✉ Kopírovat průvodní e-mail</button>
+    <button class="btn-secondary" id="btn-email" onclick="showEmailText()" style="margin-top:6px;" disabled>✉ Průvodní e-mail</button>
+
+    <div id="email-inline-box" style="display:none; margin-top:10px;">
+      <label style="display:block;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--sidebar-muted);margin-bottom:4px;">Text e-mailu (vyberte a zkopírujte):</label>
+      <textarea id="email-inline-text" readonly style="
+        width:100%;
+        min-height:140px;
+        background:rgba(255,255,255,0.06);
+        border:1px solid rgba(255,255,255,0.1);
+        color:var(--sidebar-fg);
+        font-family:'Source Sans 3',sans-serif;
+        font-size:13px;
+        line-height:1.6;
+        padding:10px;
+        border-radius:6px;
+        resize:vertical;
+      "></textarea>
+    </div>
   </div>
 
   <!-- ── TAB: PROFIL DODAVATELE ── -->
@@ -1260,9 +1277,10 @@ function generateInvoice() {
 
   renderInvoiceHTML(inv);
 
-  // Uložíme data pro e-mail a aktivujeme tlačítko
+  // Uložíme data pro e-mail a zobrazíme text
   lastGeneratedInvoice = inv;
   document.getElementById('btn-email').disabled = false;
+  updateEmailBox(inv);
 }
 
 // ── RENDER FAKTURY ────────────────────────────────────────────
@@ -1378,55 +1396,28 @@ function printInvoice() {
 }
 
 // ── PRŮVODNÍ E-MAIL ───────────────────────────────────────────
-function copyEmailText() {
-  const inv = lastGeneratedInvoice;
-  if (!inv) {
-    alert('Nejprve vygenerujte fakturu.');
-    return;
-  }
-
-  const d = inv.dodavatel || {};
-  const jmeno = d.jmeno || 'Martin Šimkovič';
-
-  const emailText = 'Dobrý den,\n\nv příloze zasílám fakturu č. ' + inv.cislo + ' na částku ' + fmtCzk(inv.castka) + '.\n\nDěkuji za spolupráci.\n\nS pozdravem\n' + jmeno;
-
-  copyToClipboard(emailText);
+function getEmailText(inv) {
+  var d = inv.dodavatel || {};
+  var jmeno = d.jmeno || 'Martin Šimkovič';
+  return 'Dobrý den,\n\nv příloze zasílám fakturu č. ' + inv.cislo + ' na částku ' + fmtCzk(inv.castka) + '.\n\nDěkuji za spolupráci.\n\nS pozdravem\n' + jmeno;
 }
 
-function copyToClipboard(text) {
-  // Zkusíme moderní API, s fallbackem na execCommand
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text).then(() => {
-      onCopySuccess();
-    }).catch(() => {
-      fallbackCopy(text);
-    });
+function updateEmailBox(inv) {
+  var box = document.getElementById('email-inline-box');
+  var ta = document.getElementById('email-inline-text');
+  ta.value = getEmailText(inv);
+  box.style.display = 'block';
+}
+
+function showEmailText() {
+  var inv = lastGeneratedInvoice;
+  if (!inv) return;
+  var box = document.getElementById('email-inline-box');
+  if (box.style.display === 'none') {
+    updateEmailBox(inv);
   } else {
-    fallbackCopy(text);
+    box.style.display = 'none';
   }
-}
-
-function fallbackCopy(text) {
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
-  document.body.appendChild(ta);
-  ta.focus();
-  ta.select();
-  try {
-    document.execCommand('copy');
-    onCopySuccess();
-  } catch (e) {
-    showToast('Kopírování se nezdařilo — zkuste Ctrl+C ručně.', 'error');
-  }
-  document.body.removeChild(ta);
-}
-
-function onCopySuccess() {
-  showToast('E-mail zkopírován do schránky ✓', 'success');
-  const btn = document.getElementById('btn-email');
-  btn.textContent = '✓ Zkopírováno';
-  setTimeout(() => { btn.innerHTML = '✉ Kopírovat průvodní e-mail'; }, 1800);
 }
 
 // ── HISTORIE ──────────────────────────────────────────────────
@@ -1452,6 +1443,7 @@ function loadHistoryItem(id) {
   renderInvoiceHTML(inv);
   lastGeneratedInvoice = inv;
   document.getElementById('btn-email').disabled = false;
+  updateEmailBox(inv);
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-nova').classList.add('active');

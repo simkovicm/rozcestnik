@@ -657,9 +657,9 @@
     <div class="card-title"><span class="tag-b">B</span> Krevní obraz</div>
     <!-- FIX 1+2: opravený popis skupiny B -->
     <div class="b-info-box">
-      ℹ Skupina B (iwCLL 2018, sekce 5.2.5):<br>
-      <strong>PR:</strong> PLT ≥100 ×10⁹/L NEBO ≥50% zlepšení nad baseline; Hb &gt;110 g/L NEBO ≥50% zlepšení nad baseline. <em>ANC není kritériem pro PR.</em><br>
-      <strong>CR:</strong> PLT ≥100, Hb ≥110 g/L, <em>ANC ≥1,5 ×10⁹/L</em> — všechna tři splněna.
+      ℹ Skupina B (iwCLL 2018, sekce 5.2.5) — hodnotí se POUZE parametry, které byly vstupně abnormální:<br>
+      <strong>PR:</strong> u vstupně nízkých PLT: ≥100 ×10⁹/L NEBO ≥50% zlepšení nad baseline; u vstupně nízkého Hb: &gt;110 g/L NEBO ≥50% zlepšení nad baseline. <em>Hodnoty normální při baseline se NEzapočítávají. ANC není kritériem pro PR.</em><br>
+      <strong>CR:</strong> PLT ≥100, Hb ≥110 g/L, <em>ANC ≥1,5 ×10⁹/L</em> — všechna tři splněna (absolutní prahy).
     </div>
     <div class="param-row">
       <div>
@@ -1200,44 +1200,66 @@
       // FIX 1: B_met_PR počítá POUZE PLT a Hb (sekce 5.2.5)
       //        B_met_CR počítá PLT + Hb + ANC (sekce 5.1.5)
       //        ANC NENÍ kritériem pro PR dle Table 4 / sekce 5.2.5
-      let B_met_PR = 0;   // pro PR: jen PLT a Hb
-      let B_met_CR = 0;   // pro CR: PLT + Hb + ANC
+      let B_met_PR = 0;       // pro PR: jen PLT a Hb, zlepšené, vstupně abnormální
+      let B_abnormal_PR = 0;  // počet parametrů skupiny B abnormálních při baseline (pouze PLT/Hb)
+      let B_met_CR = 0;       // pro CR: PLT + Hb + ANC (absolutní prahy)
       let bItems = [];
 
-      // Platelets — kritérium pro PR i CR
+      // FIX: Trombocyty — pro PR se počítají POUZE pokud byly při baseline abnormální (<100)
+      //      A došlo ke zlepšení (≥100 nebo ≥50% nad baseline). Normální hodnota při baseline
+      //      se do PR NEzapočítává (přispívá pouze k CR — absolutní práh).
       let plt_status = 'na', plt_note = null;
       if (plt_curr !== null) {
         const plt_pct_change = (plt_base !== null && plt_base > 0) ? ((plt_curr - plt_base) / plt_base * 100) : null;
-        if (plt_curr >= 100) {
-          plt_status = 'met';
-          B_met_PR++;
-          B_met_CR++;
-          if (plt_base !== null && plt_base >= 100) plt_note = 'Normální již při baseline';
-        } else if (plt_pct_change !== null && plt_pct_change >= 50) {
-          plt_status = 'met';
-          B_met_PR++;
-          B_met_CR++;
+        const plt_meets = plt_curr >= 100;
+        const plt_improved50 = plt_pct_change !== null && plt_pct_change >= 50;
+        if (plt_meets) B_met_CR++; // CR: absolutní práh, nezávisle na baseline
+        if (plt_base !== null && plt_base >= 100) {
+          // normální při baseline → pro PR se NEzapočítává
+          plt_status = 'na';
+          plt_note = 'Normální při baseline (≥100) — pro PR se nezapočítává (přispívá k CR)';
+        } else if (plt_base !== null && plt_base < 100) {
+          // abnormální při baseline → musí dojít ke zlepšení
+          B_abnormal_PR++;
+          if (plt_meets || plt_improved50) { plt_status = 'met'; B_met_PR++; }
+          else { plt_status = 'notmet'; }
         } else {
-          plt_status = 'notmet';
+          // baseline neuveden
+          if (plt_meets) {
+            plt_status = 'na';
+            plt_note = 'Bez baseline a v normě — pro PR se nezapočítává (nelze doložit zlepšení)';
+          } else {
+            B_abnormal_PR++;
+            plt_status = 'notmet';
+            plt_note = 'Bez baseline — nelze doložit zlepšení';
+          }
         }
       }
       bItems.push({ name: 'Trombocyty', val: plt_curr !== null ? `${plt_curr} ×10⁹/L` : '—', status: plt_status, note: plt_note, crOnly: false });
 
-      // Hemoglobin — kritérium pro PR i CR
+      // FIX: Hemoglobin — stejné pravidlo jako trombocyty (vstupně <110 g/L → musí se zlepšit)
       let hgb_status = 'na', hgb_note = null;
       if (hgb_curr !== null) {
         const hgb_pct_change = (hgb_base !== null && hgb_base > 0) ? ((hgb_curr - hgb_base) / hgb_base * 100) : null;
-        if (hgb_curr >= 110) {
-          hgb_status = 'met';
-          B_met_PR++;
-          B_met_CR++;
-          if (hgb_base !== null && hgb_base >= 110) hgb_note = 'Normální již při baseline';
-        } else if (hgb_pct_change !== null && hgb_pct_change >= 50) {
-          hgb_status = 'met';
-          B_met_PR++;
-          B_met_CR++;
+        const hgb_meets = hgb_curr >= 110;
+        const hgb_improved50 = hgb_pct_change !== null && hgb_pct_change >= 50;
+        if (hgb_meets) B_met_CR++; // CR: absolutní práh
+        if (hgb_base !== null && hgb_base >= 110) {
+          hgb_status = 'na';
+          hgb_note = 'Normální při baseline (≥110 g/L) — pro PR se nezapočítává (přispívá k CR)';
+        } else if (hgb_base !== null && hgb_base < 110) {
+          B_abnormal_PR++;
+          if (hgb_meets || hgb_improved50) { hgb_status = 'met'; B_met_PR++; }
+          else { hgb_status = 'notmet'; }
         } else {
-          hgb_status = 'notmet';
+          if (hgb_meets) {
+            hgb_status = 'na';
+            hgb_note = 'Bez baseline a v normě — pro PR se nezapočítává (nelze doložit zlepšení)';
+          } else {
+            B_abnormal_PR++;
+            hgb_status = 'notmet';
+            hgb_note = 'Bez baseline — nelze doložit zlepšení';
+          }
         }
       }
       bItems.push({ name: 'Hemoglobin', val: hgb_curr !== null ? `${hgb_curr} g/L` : '—', status: hgb_status, note: hgb_note, crOnly: false });
@@ -1280,12 +1302,26 @@
         crOnly: false });
 
       // ---- DETERMINE RESPONSE ----
-      const single_param_rule = A_abnormal <= 1;
-      const pr_A_threshold = single_param_rule ? 1 : 2;
+      // FIX: zohlednění pravidla iwCLL "improve if previously abnormal" napříč oběma skupinami.
+      // - Parametr skupiny B se do PR počítá jen pokud byl vstupně abnormální a zlepšil se.
+      // - Pokud žádný parametr skupiny B nebyl vstupně abnormální, je požadavek skupiny B
+      //   splněn automaticky (vacuously) a o PR rozhoduje pouze skupina A.
+      // - Pokud byl abnormální celkem jen 1 parametr (A+B), stačí zlepšení tohoto jediného.
+      const totalAbnormal = A_abnormal + B_abnormal_PR;
+      const single_param_rule = totalAbnormal === 1;
+      const pr_A_required = Math.min(2, A_abnormal);            // 0, 1 nebo 2
+      const A_satisfied_PR = A_met >= pr_A_required;
+      const B_satisfied_PR = (B_abnormal_PR === 0) || (B_met_PR >= 1);
+      const pr_A_threshold = single_param_rule ? 1 : pr_A_required; // jen pro zobrazení
 
-      // FIX 2: PR vyžaduje B_met_PR >= 1 (PLT nebo Hb) — ANC do toho NEpočítáme
-      const B_satisfied_PR = B_met_PR >= 1;
-      const pr_met = (A_met >= pr_A_threshold) && B_satisfied_PR;
+      let pr_met;
+      if (totalAbnormal === 0) {
+        pr_met = false;                                          // nic nebylo abnormální → není co zlepšovat
+      } else if (single_param_rule) {
+        pr_met = (A_met + B_met_PR) >= 1;                        // jediný abnormální parametr se musí zlepšit
+      } else {
+        pr_met = A_satisfied_PR && B_satisfied_PR;
+      }
 
       // CR kritéria — Group A absolutní prahy
       const crNodes  = !hasAny || allNodesSmall;
@@ -1345,15 +1381,16 @@
         notes.push('Redistribuční lymfocytóza u inhibitorů kináz (BTKi) sama o sobě není PD (sekce 5.3.4 iwCLL 2018).');
 
       } else {
-        // FIX 2: SD — nezahrnuje falešné B splnění přes ANC
         response = 'SD';
-        if (!B_satisfied_PR && A_met >= pr_A_threshold) {
-          desc = `Stabilní onemocnění — skupina A je zlepšena (${A_met}/${A_abnormal}), ale skupina B nesplněna: PLT ani Hb nedosahují prahu ani ≥50% zlepšení`;
-          notes.push('Skupina B (PR kritéria dle sekce 5.2.5): PLT ≥100 ×10⁹/L nebo ≥50% zlepšení; Hb ≥110 g/L nebo ≥50% zlepšení. ANC není kritériem pro PR.');
+        if (!B_satisfied_PR && A_satisfied_PR) {
+          desc = `Stabilní onemocnění — skupina A zlepšena (${A_met}/${A_abnormal}), ale požadavek skupiny B nesplněn: žádný vstupně abnormální parametr skupiny B (PLT/Hb) nedosáhl prahu ani ≥50% zlepšení`;
+          notes.push('Skupina B (PR, sekce 5.2.5): zlepšit se musí parametr, který byl vstupně abnormální (PLT <100 → ≥100 nebo +50 %; Hb <110 g/L → ≥110 nebo +50 %). Hodnoty normální při baseline se nezapočítávají. ANC není kritériem pro PR.');
+        } else if (!A_satisfied_PR && B_satisfied_PR) {
+          desc = `Stabilní onemocnění — požadavek skupiny A nesplněn (zlepšeno ${A_met}/${A_abnormal}, požadováno ${pr_A_required})`;
         } else {
           desc = `Stabilní onemocnění — nesplněna kritéria pro CR ani PR, bez progrese`;
         }
-        if (A_abnormal === 0) notes.push('Žádné A parametry nebyly patologické při baseline — zkontrolujte zadané baseline hodnoty');
+        if (totalAbnormal === 0) notes.push('Žádný parametr skupiny A ani B nebyl při baseline patologický — zkontrolujte zadané baseline hodnoty.');
       }
 
       // ---- RENDER ----
@@ -1372,8 +1409,8 @@
       html += `<div style="font-size:0.72rem;color:var(--muted);margin-bottom:1rem;padding:0.6rem;background:var(--surface2);border-radius:6px;line-height:1.7">
         Skupina A — patologické při baseline: <strong style="color:var(--text)">${A_abnormal}</strong> | zlepšeno: <strong style="color:var(--text)">${A_met}</strong> | požadováno: <strong style="color:var(--text)">${pr_A_threshold}</strong>
         ${single_param_rule ? ' <span style="color:var(--gold)">→ Platí pravidlo jediného parametru</span>' : ''}
-        <br>Skupina B (PR) — PLT/Hb nad prahem: <strong style="color:var(--text)">${B_met_PR}</strong> | požadováno: <strong style="color:var(--text)">≥1</strong>
-        <span style="color:var(--muted);font-size:0.62rem"> (ANC je kritériem pouze pro CR, ne pro PR)</span>
+        <br>Skupina B (PR) — abnormální při baseline: <strong style="color:var(--text)">${B_abnormal_PR}</strong> | zlepšeno (PLT/Hb): <strong style="color:var(--text)">${B_met_PR}</strong> | požadováno: <strong style="color:var(--text)">${B_abnormal_PR === 0 ? '0 → splněno přes skupinu A' : '≥1'}</strong>
+        <span style="color:var(--muted);font-size:0.62rem"> (normální hodnoty při baseline se nezapočítávají; ANC pouze pro CR)</span>
       </div>`;
 
       aItems.forEach(item => {
@@ -1396,9 +1433,9 @@
         </div>`;
       });
       html += `<div class="breakdown-item" style="font-size:0.72rem;color:var(--accent2);padding-top:0.7rem;border-top:1px solid var(--border);font-weight:500">
-        Skupina B (PR) — PLT/Hb splněno: <strong>${B_met_PR}</strong> | požadováno: <strong>≥1</strong><br>
+        Skupina B (PR) — abnormální při baseline (PLT/Hb): <strong>${B_abnormal_PR}</strong> | zlepšeno: <strong>${B_met_PR}</strong> | požadováno: <strong>${B_abnormal_PR === 0 ? '0 → splněno přes skupinu A' : '≥1'}</strong><br>
         Skupina B (CR) — PLT+Hb+ANC splněno: <strong>${B_met_CR}</strong> | požadováno: <strong>3</strong>
-        <span style="color:var(--muted);font-size:0.65rem;display:block;margin-top:0.2rem;">PR sekce 5.2.5: PLT ≥100 nebo +50%; Hb ≥110 g/L nebo +50%. ANC není PR kritériem.</span>
+        <span style="color:var(--muted);font-size:0.65rem;display:block;margin-top:0.2rem;">PR sekce 5.2.5: zlepšit se musí parametr, který byl vstupně abnormální (PLT &lt;100 → ≥100 nebo +50 %; Hb &lt;110 g/L → ≥110 nebo +50 %). Hodnoty normální při baseline se pro PR nezapočítávají. ANC není PR kritériem.</span>
       </div>`;
 
       document.getElementById('breakdown-items').innerHTML = html;
@@ -1473,18 +1510,28 @@
 
       if (plt_curr !== null) {
         const pltBase = plt_base !== null ? `baseline ${plt_base} → ` : '';
-        if (plt_curr >= 100) reasons.push(`trombocyty nad prahem (${pltBase}aktuálně ${plt_curr} ×10⁹/L)`);
-        else {
-          const pltPct = (plt_base && plt_base > 0) ? ((plt_curr - plt_base)/plt_base*100) : null;
-          reasons.push(`trombocyty pod prahem (${pltBase}aktuálně ${plt_curr} ×10⁹/L${pltPct !== null ? ', změna ' + (pltPct > 0 ? '+' : '') + pltPct.toFixed(0) + '%' : ''})`);
+        const pltPct = (plt_base && plt_base > 0) ? ((plt_curr - plt_base)/plt_base*100) : null;
+        const pltChange = pltPct !== null ? ', změna ' + (pltPct > 0 ? '+' : '') + pltPct.toFixed(0) + '%' : '';
+        if (plt_status === 'met') {
+          reasons.push(`zlepšení trombocytů (${pltBase}aktuálně ${plt_curr} ×10⁹/L${pltChange})`);
+        } else if (plt_status === 'notmet') {
+          reasons.push(`trombocyty bez dostatečného zlepšení (${pltBase}aktuálně ${plt_curr} ×10⁹/L${pltChange})`);
+        } else {
+          // 'na' — normální již při baseline (nebo bez baseline a v normě): pro PR se nezapočítává
+          reasons.push(`trombocyty v normě (${pltBase}aktuálně ${plt_curr} ×10⁹/L, pro PR se nezapočítává)`);
         }
       }
       if (hgb_curr !== null) {
         const hgbBase = hgb_base !== null ? `baseline ${hgb_base} → ` : '';
-        if (hgb_curr >= 110) reasons.push(`hemoglobin nad prahem (${hgbBase}aktuálně ${hgb_curr} g/L)`);
-        else {
-          const hgbPct = (hgb_base && hgb_base > 0) ? ((hgb_curr - hgb_base)/hgb_base*100) : null;
-          reasons.push(`hemoglobin pod prahem (${hgbBase}aktuálně ${hgb_curr} g/L${hgbPct !== null ? ', změna ' + (hgbPct > 0 ? '+' : '') + hgbPct.toFixed(0) + '%' : ''})`);
+        const hgbPct = (hgb_base && hgb_base > 0) ? ((hgb_curr - hgb_base)/hgb_base*100) : null;
+        const hgbChange = hgbPct !== null ? ', změna ' + (hgbPct > 0 ? '+' : '') + hgbPct.toFixed(0) + '%' : '';
+        if (hgb_status === 'met') {
+          reasons.push(`zlepšení hemoglobinu (${hgbBase}aktuálně ${hgb_curr} g/L${hgbChange})`);
+        } else if (hgb_status === 'notmet') {
+          reasons.push(`hemoglobin bez dostatečného zlepšení (${hgbBase}aktuálně ${hgb_curr} g/L${hgbChange})`);
+        } else {
+          // 'na' — normální již při baseline: pro PR se nezapočítává
+          reasons.push(`hemoglobin v normě (${hgbBase}aktuálně ${hgb_curr} g/L, pro PR se nezapočítává)`);
         }
       }
       if (anc_curr !== null) {

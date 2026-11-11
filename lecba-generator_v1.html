@@ -232,18 +232,29 @@ function buildRows(rows, poznamka, inline, lastColHeader) {
   lastColHeader = lastColHeader || 'Vysadit po';
 
   const S = inline ? {
-    th:      'border:1px solid #000;padding:6px 10px;background:#d9d9d9;font-weight:bold;font-family:"Times New Roman",serif;font-size:13px;text-align:left;',
-    section: 'border:1px solid #000;padding:6px 10px;background:#f2f2f2;font-weight:bold;font-family:"Times New Roman",serif;font-size:12px;text-transform:uppercase;letter-spacing:0.3px;',
-    note:    'border:1px solid #000;padding:6px 10px;font-style:italic;font-family:"Times New Roman",serif;font-size:12px;color:#333;',
-    tdW:     'border:1px solid #000;padding:6px 10px;font-family:"Times New Roman",serif;font-size:13px;background:#ffffff;',
-    tdG:     'border:1px solid #000;padding:6px 10px;font-family:"Times New Roman",serif;font-size:13px;background:#fafafa;',
+    th:      'border:1px solid #000;padding:6px 10px;background:#d9d9d9;font-weight:bold;font-family:&quot;Times New Roman&quot;,serif;font-size:13px;text-align:left;',
+    section: 'border:1px solid #000;padding:6px 10px;background:#f2f2f2;font-weight:bold;font-family:&quot;Times New Roman&quot;,serif;font-size:12px;text-transform:uppercase;letter-spacing:0.3px;',
+    note:    'border:1px solid #000;padding:6px 10px;font-style:italic;font-family:&quot;Times New Roman&quot;,serif;font-size:12px;color:#333;',
+    tdW:     'border:1px solid #000;padding:6px 10px;font-family:&quot;Times New Roman&quot;,serif;font-size:13px;background:#ffffff;',
+    tdG:     'border:1px solid #000;padding:6px 10px;font-family:&quot;Times New Roman&quot;,serif;font-size:13px;background:#fafafa;',
   } : null;
+
+  const thAttr = inline ? ` style="${S.th}"` : '';
+  const headerRow = `<tr>
+    <th${thAttr} align="left">Lék</th>
+    <th${thAttr}>Dávkování</th>
+    <th${thAttr}>Užívat od</th>
+    <th${thAttr}>${lastColHeader}</th>
+  </tr>`;
 
   let html = '';
   let rowIdx = 0;
 
   for (const r of rows) {
     if (r.section) {
+      if (r.spaceBefore) {
+        html += '<tr><td colspan="4" style="height:12px;padding:0;border:0;background:#fff;">&nbsp;</td></tr>';
+      }
       html += inline
         ? `<tr><td colspan="4" style="${S.section}">${r.section}</td></tr>`
         : `<tr class="section-row"><td colspan="4">${r.section}</td></tr>`;
@@ -252,17 +263,18 @@ function buildRows(rows, poznamka, inline, lastColHeader) {
         ? `<tr><td colspan="4" style="${S.note}">${r.text}</td></tr>`
         : `<tr class="note-row"><td colspan="4">${r.text}</td></tr>`;
     } else {
+      if (rowIdx === 0) html += headerRow;
       const evenClass = rowIdx % 2 !== 0 ? ' even' : '';
       const tdStyle   = inline ? (rowIdx % 2 !== 0 ? S.tdG : S.tdW) : '';
       html += inline
         ? `<tr>
-            <td style="${tdStyle}"><b>${r.name}</b></td>
+            <td align="left" style="${tdStyle}text-align:left;"><b>${r.name}</b></td>
             <td style="${tdStyle}">${r.dose}</td>
             <td style="${tdStyle}">${r.od}</td>
             <td style="${tdStyle}">${r.do_}</td>
            </tr>`
         : `<tr class="${evenClass}">
-            <td><b>${r.name}</b></td>
+            <td align="left" style="text-align:left;"><b>${r.name}</b></td>
             <td>${r.dose}</td>
             <td>${r.od}</td>
             <td>${r.do_}</td>
@@ -277,16 +289,8 @@ function buildRows(rows, poznamka, inline, lastColHeader) {
       : `<tr class="note-row"><td colspan="4">${poznamka}</td></tr>`;
   }
 
-  const thAttr = inline ? ` style="${S.th}"` : '';
-  const thead = `<thead><tr>
-    <th${thAttr}>Lék</th>
-    <th${thAttr}>Dávkování</th>
-    <th${thAttr}>Užívat od</th>
-    <th${thAttr}>${lastColHeader}</th>
-  </tr></thead>`;
-
   const tableStyle = inline ? ' style="width:100%;border-collapse:collapse;font-family:\'Times New Roman\',serif;font-size:13px;"' : ' class="med-table"';
-  return `<table${tableStyle}>${thead}<tbody>${html}</tbody></table>`;
+  return `<table${tableStyle}><tbody>${html}</tbody></table>`;
 }
 
 function generate() {
@@ -324,7 +328,7 @@ function generate() {
     if (zarzio)    rows.push({ name: 'Zarzio 0,5 ml / 48 MU', dose: '1-0-0 podkožní injekcí', od: zarzioOdStr, do_: zarzioDoStr });
 
     if (dieta || granegis) {
-      rows.push({ section: 'Režimová doporučení' });
+      rows.push({ section: 'Režimová doporučení', spaceBefore: true });
       if (dieta)    rows.push({ isNote: true, text: 'V uvedených dnech vynechat sladká jídla a sladké nápoje.' });
       if (granegis) rows.push({ isNote: true, text: 'Při nevolnosti lze užít <b>Granegis 2 mg p.o., 1 tabletu</b>.' });
     }
@@ -353,7 +357,7 @@ function generate() {
     if (helicid)   rows.push({ name: 'Helicid 20 mg',   dose: '1-0-0', od: odStr, do_: doStr });
 
     if (dieta || granegis) {
-      rows.push({ section: 'Režimová doporučení' });
+      rows.push({ section: 'Režimová doporučení', spaceBefore: true });
       if (dieta)    rows.push({ isNote: true, text: 'V uvedených dnech vynechat sladká jídla a sladké nápoje.' });
       if (granegis) rows.push({ isNote: true, text: 'Při nevolnosti lze užít <b>Granegis 2 mg p.o., 1 tabletu</b>.' });
     }
@@ -412,11 +416,11 @@ function generate() {
     titleTxt = document.getElementById('custom-nazev').value.trim() || 'Vlastní text';
     const text = document.getElementById('custom-text').value.trim();
     if (!text) { alert('Vyplňte prosím vlastní text.'); return; }
-    rows.push({ isNote: true, text: text.replace(/\n/g, '<br>') });
+    rows.push({ isNote: true, text: text.replace(/\n/g, '<br>'), plainText: text });
   }
 
   const lastColHeader = (currentProtocol === 'brukinsa' || currentProtocol === 'calquence') ? 'Délka podávání' : 'Vysadit po';
-  const titleStyle = 'font-family:"Times New Roman",serif;font-size:14px;font-weight:bold;margin:0 0 16px 0;';
+  const titleStyle = 'font-family:&quot;Times New Roman&quot;,serif;font-size:14px;font-weight:bold;margin:0 0 16px 0;';
 
   const previewHTML = `<p class="doc-title">${titleTxt}</p>` + buildRows(rows, poznamka, false, lastColHeader);
 
@@ -425,10 +429,67 @@ function generate() {
     ${buildRows(rows, poznamka, true, lastColHeader)}
   </body></html>`;
 
-  renderOutput(previewHTML);
+  renderOutput(previewHTML, buildTextTable(titleTxt, rows, poznamka, lastColHeader));
 }
 
-function renderOutput(previewHTML) {
+function buildTextTable(title, rows, note, lastColHeader) {
+  const widths = [28, 18, 12, 16];
+  const border = '+' + widths.map(width => '-'.repeat(width + 2)).join('+') + '+';
+
+  function wrap(value, width) {
+    const lines = [];
+    for (let line of String(value ?? '').split(/\r?\n/)) {
+      line = line.trim().replace(/[^\S\r\n]+/g, ' ');
+      while (line.length > width) {
+        const space = line.lastIndexOf(' ', width);
+        const end = space > 0 ? space : width;
+        lines.push(line.slice(0, end));
+        line = line.slice(end).trimStart();
+      }
+      lines.push(line);
+    }
+    return lines;
+  }
+
+  function formatRow(values) {
+    const cells = values.map((value, index) => wrap(value, widths[index]));
+    return Array.from({ length: Math.max(...cells.map(cell => cell.length)) }, (_, line) =>
+      '| ' + cells.map((cell, index) => (cell[line] ?? '').padEnd(widths[index])).join(' | ') + ' |'
+    );
+  }
+
+  function formatWideRow(value) {
+    const width = border.length - 4;
+    return wrap(value, width).map(line => '| ' + line.padEnd(width) + ' |');
+  }
+
+  function noteToText(html) {
+    const template = document.createElement('template');
+    template.innerHTML = html.replace(/<br\s*\/?>/gi, '\n');
+    return template.content.textContent;
+  }
+
+  const lines = [title, '', border];
+  let headerAdded = false;
+  for (const row of rows) {
+    if (row.section) {
+      if (row.spaceBefore) lines.push('', border);
+      lines.push(...formatWideRow(row.section.toLocaleUpperCase('cs-CZ')), border);
+    } else if (row.isNote) {
+      lines.push(...formatWideRow(row.plainText ?? noteToText(row.text)), border);
+    } else {
+      if (!headerAdded) {
+        lines.push(...formatRow(['Lék a síla', 'Dávkování', 'Od', lastColHeader]), border);
+        headerAdded = true;
+      }
+      lines.push(...formatRow([row.name, row.dose, row.od, row.do_]), border);
+    }
+  }
+  if (note) lines.push(...formatWideRow(note), border);
+  return lines.join('\r\n');
+}
+
+function renderOutput(previewHTML, textTable) {
   document.getElementById('preview-empty').style.display = 'none';
   const ex = document.getElementById('output-card');
   if (ex) ex.remove();
@@ -439,11 +500,29 @@ function renderOutput(previewHTML) {
   card.innerHTML = `
     <div class="card-toolbar">
       <span class="card-toolbar-label">Náhled výstupu</span>
-      <button class="btn-copy" id="copy-btn" onclick="copyTable()">⎘ Kopírovat do schránky</button>
+      <div>
+        <button class="btn-copy" id="copy-btn" onclick="copyTable()">Kopírovat pro Word</button>
+        <button class="btn-copy" id="copy-mc4-btn">Kopírovat pro MC4</button>
+      </div>
     </div>
     <div class="doc-wrapper">${previewHTML}</div>
-    <p class="doc-hint">Ctrl+V ve Wordu vloží formátovanou tabulku.</p>
+    <p class="doc-hint">Pro MC4 se kopíruje HTML tabulka i textová varianta. Zarovnání textové varianty vyžaduje písmo s pevnou šířkou znaků.</p>
   `;
+  const mc4Button = card.querySelector('#copy-mc4-btn');
+  mc4Button.addEventListener('click', async () => {
+    try {
+      const item = new ClipboardItem({
+        'text/html': new Blob([storedClipboardHTML], { type: 'text/html' }),
+        'text/plain': new Blob([textTable], { type: 'text/plain' })
+      });
+      await navigator.clipboard.write([item]);
+      mc4Button.textContent = '✓ Zkopírováno!';
+      setTimeout(() => { mc4Button.textContent = 'Kopírovat pro MC4'; }, 2500);
+    } catch (err) {
+      alert('Kopírování selhalo – povolte přístup ke schránce v prohlížeči.');
+      console.error(err);
+    }
+  });
   document.getElementById('preview').appendChild(card);
   card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -457,7 +536,7 @@ async function copyTable() {
     const btn = document.getElementById('copy-btn');
     btn.textContent = '✓ Zkopírováno!';
     btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = '⎘ Kopírovat do schránky'; btn.classList.remove('copied'); }, 2500);
+    setTimeout(() => { btn.textContent = 'Kopírovat pro Word'; btn.classList.remove('copied'); }, 2500);
   } catch (err) {
     alert('Kopírování selhalo – povolte přístup ke schránce v prohlížeči.');
     console.error(err);

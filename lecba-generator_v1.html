@@ -429,67 +429,77 @@ function generate() {
     ${buildRows(rows, poznamka, true, lastColHeader)}
   </body></html>`;
 
-  renderOutput(previewHTML, buildTextTable(titleTxt, rows, poznamka, lastColHeader));
+  renderOutput(previewHTML, buildTextTable(titleTxt, rows, poznamka, lastColHeader), buildRtf(titleTxt, rows, poznamka, lastColHeader));
 }
 
+function noteToText(html) {
+  const template = document.createElement('template');
+  template.innerHTML = String(html).replace(/<br\s*\/?>/gi, '\n');
+  return template.content.textContent;
+}
+
+// Prostý text oddělený tabulátory (jako z Excelu) – bez ASCII rámečků
 function buildTextTable(title, rows, note, lastColHeader) {
-  const widths = [28, 18, 12, 16];
-  const border = '+' + widths.map(width => '-'.repeat(width + 2)).join('+') + '+';
-
-  function wrap(value, width) {
-    const lines = [];
-    for (let line of String(value ?? '').split(/\r?\n/)) {
-      line = line.trim().replace(/[^\S\r\n]+/g, ' ');
-      while (line.length > width) {
-        const space = line.lastIndexOf(' ', width);
-        const end = space > 0 ? space : width;
-        lines.push(line.slice(0, end));
-        line = line.slice(end).trimStart();
-      }
-      lines.push(line);
-    }
-    return lines;
-  }
-
-  function formatRow(values) {
-    const cells = values.map((value, index) => wrap(value, widths[index]));
-    return Array.from({ length: Math.max(...cells.map(cell => cell.length)) }, (_, line) =>
-      '| ' + cells.map((cell, index) => (cell[line] ?? '').padEnd(widths[index])).join(' | ') + ' |'
-    );
-  }
-
-  function formatWideRow(value) {
-    const width = border.length - 4;
-    return wrap(value, width).map(line => '| ' + line.padEnd(width) + ' |');
-  }
-
-  function noteToText(html) {
-    const template = document.createElement('template');
-    template.innerHTML = html.replace(/<br\s*\/?>/gi, '\n');
-    return template.content.textContent;
-  }
-
-  const lines = [title, '', border];
+  const lines = [title, ''];
   let headerAdded = false;
   for (const row of rows) {
     if (row.section) {
-      if (row.spaceBefore) lines.push('', border);
-      lines.push(...formatWideRow(row.section.toLocaleUpperCase('cs-CZ')), border);
+      if (row.spaceBefore) lines.push('');
+      lines.push(row.section.toLocaleUpperCase('cs-CZ'));
     } else if (row.isNote) {
-      lines.push(...formatWideRow(row.plainText ?? noteToText(row.text)), border);
+      lines.push(row.plainText ?? noteToText(row.text));
     } else {
-      if (!headerAdded) {
-        lines.push(...formatRow(['Lék a síla', 'Dávkování', 'Od', lastColHeader]), border);
-        headerAdded = true;
-      }
-      lines.push(...formatRow([row.name, row.dose, row.od, row.do_]), border);
+      if (!headerAdded) { lines.push(['Lék a síla', 'Dávkování', 'Od', lastColHeader].join('\t')); headerAdded = true; }
+      lines.push([row.name, row.dose, row.od, row.do_].join('\t'));
     }
   }
-  if (note) lines.push(...formatWideRow(note), border);
+  if (note) lines.push('', note);
   return lines.join('\r\n');
 }
 
-function renderOutput(previewHTML, textTable) {
+// RTF se skutečnou tabulkou (formát, který MC4 přebírá z desktopového Excelu/Wordu)
+function buildRtf(title, rows, note, lastColHeader) {
+  const esc = t => String(t ?? '').replace(/[\{}]/g, m => '\\' + m)
+    .replace(/\r?\n/g, '\\line ')
+    .replace(/[^\x00-\x7f]/g, c => { const n = c.charCodeAt(0); return '\\u' + (n > 32767 ? n - 65536 : n) + '?'; });
+  const rich = html => {
+    const parts = String(html).split(/(<\/?b>)/i); let out = '';
+    for (const part of parts) {
+      if (/^<b>$/i.test(part)) out += '\\b ';
+      else if (/^<\/b>$/i.test(part)) out += '\\b0 ';
+      else out += esc(noteToText(part));
+    }
+    return out;
+  };
+  const widths = [3600, 2300, 1500, 2200];
+  const brd = '\\clbrdrt\\brdrs\\brdrw10\\clbrdrl\\brdrs\\brdrw10\\clbrdrb\\brdrs\\brdrw10\\clbrdrr\\brdrs\\brdrw10';
+  const rowRtf = (cells, bold) => {
+    let x = 0, defs = '';
+    const ws = cells.length === 1 ? [widths.reduce((a, b) => a + b)] : widths;
+    ws.forEach(w => { x += w; defs += brd + '\\cellx' + x; });
+    return '\\trowd\\trgaph80\\trleft0' + defs + ' ' +
+      cells.map(c => '\\pard\\intbl\\ql' + (bold ? '\\b ' : ' ') + c + (bold ? '\\b0' : '') + '\\cell').join(' ') + '\\row\n';
+  };
+  let r = '{\\rtf1\\ansi\\ansicpg1250\\deff0{\\fonttbl{\\f0\\fswiss Arial;}}\\f0\\fs20\n';
+  r += '\\pard\\b ' + esc(title) + '\\b0\\par\\par\n';
+  let headerAdded = false;
+  for (const row of rows) {
+    if (row.section) {
+      if (row.spaceBefore) r += '\\pard\\par\n';
+      r += rowRtf([esc(row.section.toLocaleUpperCase('cs-CZ'))], true);
+    } else if (row.isNote) {
+      r += rowRtf([row.plainText != null ? esc(row.plainText) : rich(row.text)], false);
+    } else {
+      if (!headerAdded) { r += rowRtf(['Lék a síla', 'Dávkování', 'Od', lastColHeader].map(esc), true); headerAdded = true; }
+      r += rowRtf([row.name, row.dose, row.od, row.do_].map(esc), false);
+    }
+  }
+  if (note) r += rowRtf([esc(note)], false);
+  r += '\\pard\\par}';
+  return r;
+}
+
+function renderOutput(previewHTML, textTable, rtf) {
   document.getElementById('preview-empty').style.display = 'none';
   const ex = document.getElementById('output-card');
   if (ex) ex.remove();
@@ -503,10 +513,11 @@ function renderOutput(previewHTML, textTable) {
       <div>
         <button class="btn-copy" id="copy-btn" onclick="copyTable()">Kopírovat pro Word</button>
         <button class="btn-copy" id="copy-mc4-btn">Kopírovat pro MC4</button>
+        <button class="btn-copy" id="rtf-mc4-btn">Stáhnout RTF pro MC4</button>
       </div>
     </div>
     <div class="doc-wrapper">${previewHTML}</div>
-    <p class="doc-hint">Pro MC4 se kopíruje HTML tabulka i textová varianta. Zarovnání textové varianty vyžaduje písmo s pevnou šířkou znaků.</p>
+    <p class="doc-hint">Pro MC4: „Stáhnout RTF“ → otevřít soubor (Word/WordPad) → Ctrl+A, Ctrl+C → vložit do MC4.</p>
   `;
   const mc4Button = card.querySelector('#copy-mc4-btn');
   mc4Button.addEventListener('click', async () => {
@@ -522,6 +533,14 @@ function renderOutput(previewHTML, textTable) {
       alert('Kopírování selhalo – povolte přístup ke schránce v prohlížeči.');
       console.error(err);
     }
+  });
+  card.querySelector('#rtf-mc4-btn').addEventListener('click', () => {
+    const blob = new Blob([rtf], { type: 'application/rtf' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'onkotext-mc4.rtf';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });
   document.getElementById('preview').appendChild(card);
   card.scrollIntoView({ behavior: 'smooth', block: 'start' });

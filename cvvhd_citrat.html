@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CVVHD citrát kalkulačka</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one narrow clinical column; each step is a band with inputs left, result right (stacks on phone) */
+:root {
+  --bg: #f5f8f8;
+  --surface: #ffffff;
+  --fg: #142426;
+  --muted: #5a6e71;
+  --line: #d6e0e1;
+  --accent: #0b6e78;
+  --accent-soft: #e2f1f2;
+  --ok: #2c7a3f;   --ok-bg: #e5f3e8;
+  --warn: #9a6200; --warn-bg: #fbf0d9;
+  --bad: #b3261e;  --bad-bg: #fbe5e3;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1617; --surface: #152022; --fg: #e3eeee; --muted: #93a7aa; --line: #2a3a3c;
+    --accent: #5cc3cc; --accent-soft: #17343a;
+    --ok: #7fd18f; --ok-bg: #173022; --warn: #f0b955; --warn-bg: #352812; --bad: #ff8a80; --bad-bg: #3a1a18;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1617; --surface: #152022; --fg: #e3eeee; --muted: #93a7aa; --line: #2a3a3c;
+  --accent: #5cc3cc; --accent-soft: #17343a;
+  --ok: #7fd18f; --ok-bg: #173022; --warn: #f0b955; --warn-bg: #352812; --bad: #ff8a80; --bad-bg: #3a1a18;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 48px;
+}
+.wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 28px; }
+header h1 { font-size: 1.6rem; margin: 0 0 4px; text-wrap: balance; letter-spacing: -0.01em; }
+header p { margin: 0; color: var(--muted); max-width: 65ch; }
+.target { display: inline-flex; gap: 8px; align-items: baseline; margin-top: 12px; padding: 6px 12px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.target span { font-family: var(--font-mono); }
+
+section { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 16px; }
+section h2 { margin: 0; font-size: 1.05rem; display: flex; gap: 10px; align-items: baseline; text-wrap: balance; }
+section h2 .tag { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+@media (max-width: 640px) { .cols { grid-template-columns: 1fr; } }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; align-content: start; }
+label { display: grid; gap: 4px; font-size: 0.82rem; color: var(--muted); font-weight: 500; }
+label small { font-weight: 400; }
+input, select {
+  font: 600 1.05rem var(--font-mono); color: var(--fg); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; width: 100%; min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.result { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.big { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.big div { display: grid; }
+.big .lbl { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.big .val { font: 600 1.7rem var(--font-mono); font-variant-numeric: tabular-nums; line-height: 1.2; }
+.big .val small { font-size: 0.85rem; font-weight: 400; color: var(--muted); margin-left: 3px; }
+.pill { display: inline-block; padding: 6px 12px; border-radius: 6px; font-weight: 600; }
+.pill.ok { background: var(--ok-bg); color: var(--ok); }
+.pill.warn { background: var(--warn-bg); color: var(--warn); }
+.pill.bad { background: var(--bad-bg); color: var(--bad); }
+.pill.neutral { background: var(--accent-soft); color: var(--accent); }
+.note { font-size: 0.85rem; color: var(--muted); margin: 0; }
+.note.alert { color: var(--warn); font-weight: 500; }
+
+table { border-collapse: collapse; width: 100%; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 500; }
+td:last-child, th:last-child { text-align: right; font-family: var(--font-mono); }
+tr.hit td { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+details summary { cursor: pointer; font-size: 0.85rem; color: var(--accent); font-weight: 500; }
+details[open] summary { margin-bottom: 6px; }
+
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button { font: 500 0.9rem var(--font-body); padding: 8px 14px; border: 0; background: var(--bg); color: var(--fg); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+ol.steps { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+ol.steps b { font-family: var(--font-mono); }
+
+.mc4 { margin: 0; padding: 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; font: 0.92rem/1.6 var(--font-mono); overflow-x: auto; white-space: pre; user-select: all; }
+.btn { font: 600 0.95rem var(--font-body); padding: 9px 18px; border-radius: 6px; border: 0; background: var(--accent); color: var(--surface); cursor: pointer; }
+.guide { display: grid; gap: 10px; padding: 14px; border-radius: 8px; background: var(--accent-soft); }
+.guide-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.guide-head strong { color: var(--accent); }
+.guide table td, .guide table th { border-bottom-color: color-mix(in srgb, var(--accent) 20%, transparent); }
+.sub { margin: 8px 0 0; font-size: 0.95rem; }
+.btn-sm { padding: 6px 12px; font-size: 0.85rem; }
+footer { font-size: 0.8rem; color: var(--muted); max-width: 70ch; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>CVVHD s citrátovou antikoagulací</h1>
+    <p>Kalkulačka podle oddělového protokolu (CiCa modul). Hodnoty jsou předvyplněné jako příklad, přepište je na hodnoty pacienta. Desetinná čárka i tečka fungují.</p>
+    <div class="target">Cíl CaI za filtrem <span>0,25–0,35 mmol/l</span></div>
+  </header>
+
+  <!-- 1. Úvodní nastavení -->
+  <section aria-labelledby="h1">
+    <h2 id="h1"><span class="tag">Start</span> Úvodní nastavení</h2>
+    <div class="cols">
+      <div class="fields">
+        <label for="wt">Hmotnost <small>kg</small><input id="wt" inputmode="decimal" value="80"></label>
+        <label for="dose">Dávka dialyzátu <small>ml/kg/h (25–35)</small><input id="dose" inputmode="decimal" value="35"></label>
+        <label for="uf">Požadované stažení <small>ml/h</small><input id="uf" inputmode="decimal" value="100"></label>
+        <label for="citDose">Dávka citrátu <small>mmol/l krve</small><input id="citDose" inputmode="decimal" value="4,0"></label>
+        <label for="caDose">Dávka kalcia <small>mmol/l efluentu</small><input id="caDose" inputmode="decimal" value="1,7"></label>
+      </div>
+      <div class="result" id="r-start"></div>
+    </div>
+    <div class="guide">
+      <div class="guide-head">
+        <strong>Standardní úvodní dávky na přístroji</strong>
+        <button type="button" id="stdBtn" class="btn btn-sm">Nastavit 4,0 / 1,7</button>
+      </div>
+      <table>
+        <thead><tr><th>Na přístroji</th><th>Úvod</th></tr></thead>
+        <tbody>
+          <tr><td>Na citrát 4 %: dávka citrátu</td><td>4,0 mmol/l krve</td></tr>
+          <tr><td>CaCl₂ 10 %: dávka kalcia</td><td>1,7 mmol/l filtrátu</td></tr>
+        </tbody>
+      </table>
+      <ol class="steps">
+        <li>Zahájit s dávkami 4,0 a 1,7. Rychlost pump v ml/h dopočítá přístroj.</li>
+        <li>Za 5 min odebrat CaI za filtrem a upravit citrát podle tabulky níže (cíl 0,25–0,35).</li>
+        <li>Podle systémového CaI upravit kalcium podle tabulky kalcia, další změnu až za 12 h (kromě krajních hodnot).</li>
+      </ol>
+      <p class="note">Dávky 4,0 a 1,7 jsou výchozí hodnoty CiCa modulu, protokol oddělení je neuvádí. Ověřte je s vedoucím lékařem.</p>
+    </div>
+    <details>
+      <summary>Tabulka průtok ↔ dialyzát z protokolu</summary>
+      <div style="overflow-x:auto"><table id="t-start"><thead><tr><th>Průtok krve ml/min</th><th>Dialyzát ml/h</th></tr></thead><tbody></tbody></table></div>
+    </details>
+    <p class="note">Posuny: citrát = dávka × průtok krve (l/h) ÷ 136 mmol/l (Na citrát 4 %). CaCl₂ = dávka × efluent (dialyzát + UF, l/h) ÷ 0,456 mmol/ml (CaCl₂ 10 % neředěný). Výchozí dávky 4,0 a 1,7 odpovídají nastavení CiCa modulu; přístroj posuny dopočítá sám, zde slouží k zápisu a kontrole. Na začátku je lepší 35 ml/kg/h.</p>
+  </section>
+
+  <!-- 1b. KCl do vaku -->
+  <section aria-labelledby="hk">
+    <h2 id="hk"><span class="tag">Dialyzát</span> KCl 7,5 % do vaku Ci-Ca K2</h2>
+    <div class="cols">
+      <div class="fields">
+        <label for="kTarget">Cílové K v dialyzátu <small>mmol/l</small><input id="kTarget" inputmode="decimal" value="4,0"></label>
+        <label for="bagVol">Objem vaku <small>ml</small><input id="bagVol" inputmode="decimal" value="5000"></label>
+        <label for="bagK">K ve vaku <small>mmol/l (K2)</small><input id="bagK" inputmode="decimal" value="2"></label>
+      </div>
+      <div class="result" id="r-kcl"></div>
+    </div>
+    <div style="overflow-x:auto"><table id="t-kcl"><thead><tr><th>KCl 7,5 % do vaku</th><th>Výsledné K mmol/l</th></tr></thead><tbody></tbody></table></div>
+    <p class="note">KCl 7,5 % obsahuje 1,006 mmol K⁺/ml (zhruba 1 mmol/ml). Do 5000 ml vaku tedy každých 5 ml KCl zvýší K o 1 mmol/l. Po přidání vak promíchejte a označte. Pro K 4 mmol/l je jednodušší použít hotový vak Ci-Ca K4.</p>
+  </section>
+
+  <!-- 2. Citrát -->
+  <section aria-labelledby="h2">
+    <h2 id="h2"><span class="tag">á 6 h</span> Posun citrátu podle CaI za filtrem</h2>
+    <div class="cols">
+      <div class="fields">
+        <label for="caiPost">CaI za filtrem <small>mmol/l</small><input id="caiPost" inputmode="decimal" value="0,38"></label>
+        <label for="citNow">Aktuální citrát <small>mmol/l krve</small><input id="citNow" inputmode="decimal" value="4,0"></label>
+      </div>
+      <div class="result" id="r-cit"></div>
+    </div>
+    <details>
+      <summary>Celá tabulka</summary>
+      <div style="overflow-x:auto"><table id="t-cit"><thead><tr><th>CaI za filtrem</th><th>Změna citrátu</th></tr></thead><tbody></tbody></table></div>
+    </details>
+    <p class="note">První odběr 5 min po zahájení, pak á 6 h.</p>
+  </section>
+
+  <!-- 3. Kalcium -->
+  <section aria-labelledby="h3">
+    <h2 id="h3"><span class="tag">á 6–8 h</span> Posun kalcia podle systémového CaI</h2>
+    <div class="cols">
+      <div class="fields">
+        <label for="caiSys">Systémové CaI <small>mmol/l</small><input id="caiSys" inputmode="decimal" value="1,08"></label>
+        <label for="caNow">Aktuální kalcium <small>mmol/l efluentu</small><input id="caNow" inputmode="decimal" value="1,7"></label>
+      </div>
+      <div class="result" id="r-ca"></div>
+    </div>
+    <details>
+      <summary>Celá tabulka</summary>
+      <div style="overflow-x:auto"><table id="t-ca"><thead><tr><th>Systémové CaI</th><th>Změna kalcia</th></tr></thead><tbody></tbody></table></div>
+    </details>
+    <p class="note">Další změnu posunu kalcia dělejte až za 12 h, pokud CaI není v krajních hodnotách.</p>
+  </section>
+
+  <!-- 4. Akumulace citrátu -->
+  <section aria-labelledby="h4">
+    <h2 id="h4"><span class="tag">Kontrola</span> Akumulace citrátu</h2>
+    <div class="cols">
+      <div class="fields">
+        <label for="na">Na <small>mmol/l</small><input id="na" inputmode="decimal" value="138"></label>
+        <label for="cl">Cl <small>mmol/l</small><input id="cl" inputmode="decimal" value="104"></label>
+        <label for="hco3">HCO₃⁻ <small>mmol/l</small><input id="hco3" inputmode="decimal" value="23"></label>
+        <label for="caTot">Ca celkové <small>mmol/l</small><input id="caTot" inputmode="decimal" value="2,30"></label>
+        <label for="caiRatio">CaI systémové <small>mmol/l</small><input id="caiRatio" inputmode="decimal" value="1,08"></label>
+      </div>
+      <div class="result" id="r-acc"></div>
+    </div>
+    <p class="note">Anion gap á 12 h (norma 8–12). Poměr Ca/CaI 1× denně (do 2,5). Vyšší hodnoty jsou známkou akumulace citrátu.</p>
+  </section>
+
+  <!-- 5. ABR -->
+  <section aria-labelledby="h5">
+    <h2 id="h5"><span class="tag">ABR</span> Úprava při acidóze nebo alkalóze</h2>
+    <div class="seg" role="group" aria-label="Porucha">
+      <button type="button" id="b-acid" aria-pressed="true">Metabolická acidóza (↓ HCO₃⁻)</button>
+      <button type="button" id="b-alk" aria-pressed="false">Metabolická alkalóza (↑ HCO₃⁻)</button>
+    </div>
+    <div class="cols">
+      <div class="fields">
+        <label for="flowNow">Aktuální průtok krve <small>ml/min</small><input id="flowNow" inputmode="decimal" value="140"></label>
+        <label for="dialNow">Aktuální dialyzát <small>ml/h</small><input id="dialNow" inputmode="decimal" value="2800"></label>
+      </div>
+      <div class="result" id="r-abr"></div>
+    </div>
+  </section>
+
+  <!-- 6. Výstup do MC4 -->
+  <section aria-labelledby="h6">
+    <h2 id="h6"><span class="tag">MC4</span> Výstup ke zkopírování</h2>
+    <pre id="mc4" class="mc4" tabindex="0"></pre>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <button type="button" id="copyBtn" class="btn">Zkopírovat</button>
+      <span id="copyMsg" class="note" aria-live="polite"></span>
+    </div>
+    <h3 class="sub">Odběry</h3>
+    <pre id="odbery" class="mc4" tabindex="0">Odběry:
+CaI za filtrem         5 min po zahájení, pak 06, 12, 18, 24 hod
+Na, K, Cl, CaI         06, 12, 18, 24 hod
+žilní KP               06, 12, 18, 24 hod
+Ca celk., Mg           1× denně (06 hod)</pre>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <button type="button" id="copyOdb" class="btn">Zkopírovat odběry</button>
+      <span id="copyOdbMsg" class="note" aria-live="polite"></span>
+    </div>
+    <p class="note">Hodnoty se berou z úvodního nastavení a z části KCl. U citrátu a CaCl₂ se zapisuje dávka nastavená v CiCa modulu (citrát mmol/l krve, kalcium mmol/l filtrátu). Skutečné rychlosti pump v ml/h jsou v úvodním nastavení nahoře.</p>
+  </section>
+
+  <footer>
+    Pomůcka přepisuje interní protokol „Kontinuální veno-venózní citrátová hemodialýza (CVVHD), CiCa modul“. Nenahrazuje klinický úsudek ani nastavení přístroje. Kontraindikace: laktátová acidóza, jaterní selhání. Dialyzát Ci-Ca K2 nebo K4, citrát Na citrát 4 %, kalcium CaCl₂ 10 % (4,56 mmol/10 ml), výpočet posunu počítá s neředěným roztokem; Ca glukonát má poloviční obsah kalcia.
+  </footer>
+</div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const num = (id) => {
+    const s = ($(id).value || "").trim().replace(",", ".");
+    if (s === "") return null;
+    const v = Number(s);
+    return Number.isFinite(v) ? v : NaN;
+  };
+  const fmt = (v, d = 2) => v.toLocaleString("cs-CZ", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const sign = (v, d = 1) => (v > 0 ? "+" : v < 0 ? "−" : "") + fmt(Math.abs(v), d);
+  const valBox = (lbl, val, unit) => `<div><span class="lbl">${lbl}</span><span class="val">${val}<small>${unit}</small></span></div>`;
+  const missing = (msg) => `<p class="note">${msg}</p>`;
+
+  // Tables from protocol
+  const CIT = [
+    { test: (x) => x > 0.45, label: "nad 0,45", d: 0.3 },
+    { test: (x) => x > 0.40, label: "0,41–0,45", d: 0.2 },
+    { test: (x) => x >= 0.35, label: "0,35–0,40", d: 0.1 },
+    { test: (x) => x >= 0.25, label: "0,25–0,34", d: 0 },
+    { test: (x) => x >= 0.20, label: "0,20–0,24", d: -0.1 },
+    { test: (x) => x >= 0.15, label: "0,15–0,19", d: -0.2 },
+    { test: () => true, label: "pod 0,15", d: -0.3 },
+  ];
+  const CA = [
+    { test: (x) => x > 1.45, label: "nad 1,45", d: -0.6, extreme: true },
+    { test: (x) => x > 1.30, label: "1,31–1,45", d: -0.4 },
+    { test: (x) => x > 1.20, label: "1,21–1,30", d: -0.2 },
+    { test: (x) => x >= 1.12, label: "1,12–1,20", d: 0 },
+    { test: (x) => x >= 1.05, label: "1,05–1,11", d: 0.2 },
+    { test: (x) => x >= 0.95, label: "0,95–1,04", d: 0.4 },
+    { test: () => true, label: "pod 0,95", d: 0.6, extreme: true },
+  ];
+  const fillTable = (id, rows, hitIdx) => {
+    $(id).querySelector("tbody").innerHTML = rows.map((r, i) =>
+      `<tr class="${i === hitIdx ? "hit" : ""}"><td>${r.label}</td><td>${r.d === 0 ? "beze změny" : sign(r.d)}</td></tr>`).join("");
+  };
+
+  const CIT_MMOL_PER_ML = 0.136; // Na citrát 4 % = 136 mmol/l
+  const CA_MMOL_PER_ML = 0.456;  // CaCl2 10 % neředěný = 4,56 mmol/10 ml
+  let cur = { flow: null, eff: null };
+  const citRate = (dose, flow) => (dose * flow * 0.06) / CIT_MMOL_PER_ML;   // ml/h
+  const caRate = (dose, effMlH) => (dose * effMlH / 1000) / CA_MMOL_PER_ML; // ml/h
+
+  function start() {
+    const wt = num("wt"), dose = num("dose"), uf = num("uf");
+    const cd = num("citDose"), kd = num("caDose");
+    const el = $("r-start");
+    let hit = -1;
+    cur = { flow: null, eff: null };
+    if (!(wt > 0) || !(dose > 0)) {
+      el.innerHTML = missing("Zadejte hmotnost a dávku dialyzátu.");
+    } else {
+      const dialRaw = wt * dose;
+      const dial = Math.round(dialRaw / 100) * 100;
+      const flow = dial / 20;
+      let html = `<div class="big">${valBox("Dialyzát", dial.toLocaleString("cs-CZ"), "ml/h")}${valBox("Průtok krve", fmt(flow, 0), "ml/min")}${uf !== null && !isNaN(uf) ? valBox("UF", uf.toLocaleString("cs-CZ"), "ml/h") : ""}</div>`;
+      html += `<p class="note">${fmt(wt, 0)} kg × ${fmt(dose, 0)} ml/kg/h = ${Math.round(dialRaw).toLocaleString("cs-CZ")} ml/h, zaokrouhleno na 100. Průtok = dialyzát ÷ 20.</p>`;
+      if (dose < 25 || dose > 35) html += `<p class="note alert">Dávka je mimo rozmezí protokolu 25–35 ml/kg/h.</p>`;
+      if (flow < 100 || flow > 200) html += `<p class="note alert">Průtok je mimo tabulku protokolu (100–200 ml/min).</p>`;
+      const ufV = uf !== null && !isNaN(uf) ? uf : 0;
+      const eff = dial + ufV;
+      cur = { flow, eff, dial, uf: ufV };
+      if (cd > 0 && kd > 0) {
+        const cr = citRate(cd, flow), kr = caRate(kd, eff);
+        Object.assign(cur, { cr, kr, cd, kd });
+        html += `<div class="big">${valBox("Na citrát 4 %", fmt(cr, 0), "ml/h")}${valBox("CaCl₂ 10 %", fmt(kr, 1), "ml/h")}</div>`;
+        html += `<p class="note">Citrát ${fmt(cd, 1)} mmol/l × ${fmt(flow * 0.06, 1)} l/h krve = ${fmt(cd * flow * 0.06, 1)} mmol/h. Kalcium ${fmt(kd, 1)} mmol/l × ${fmt(eff / 1000, 2)} l/h efluentu = ${fmt(kd * eff / 1000, 2)} mmol/h.</p>`;
+      } else html += missing("Pro posuny zadejte dávku citrátu a kalcia.");
+      el.innerHTML = html;
+      hit = [100, 120, 140, 160, 180, 200].indexOf(flow);
+    }
+    $("t-start").querySelector("tbody").innerHTML = [100, 120, 140, 160, 180, 200].map((f, i) =>
+      `<tr class="${i === hit ? "hit" : ""}"><td>${f}</td><td>${(f * 20).toLocaleString("cs-CZ")}</td></tr>`).join("");
+  }
+
+  const KCL_MMOL_PER_ML = 1.006; // KCl 7,5 % = 75 g/l ÷ 74,55
+  let kclOut = { ml: null, v: null, k0: null };
+  function kcl() {
+    const t = num("kTarget"), v = num("bagVol"), k0 = num("bagK");
+    const el = $("r-kcl");
+    kclOut = { ml: null, v, k0 };
+    const resK = (ml) => (k0 * v / 1000 + ml * KCL_MMOL_PER_ML) / ((v + ml) / 1000);
+    if (!(v > 0) || k0 === null || isNaN(k0)) { el.innerHTML = missing("Zadejte objem vaku a K ve vaku."); return; }
+    let hit = -1;
+    const rows = [0, 2.5, 5, 7.5, 10, 12.5, 15, 20];
+    if (t === null || isNaN(t)) {
+      el.innerHTML = missing("Zadejte cílové K.");
+    } else if (t <= k0) {
+      el.innerHTML = `<div><span class="pill ok">KCl nepřidávat</span></div><p class="note">Vak už má ${fmt(k0, 1)} mmol/l.</p>`;
+      hit = 0;
+      kclOut.ml = 0;
+    } else {
+      const ml = (t * v / 1000 - k0 * v / 1000) / (KCL_MMOL_PER_ML - t / 1000);
+      const mlR = Math.round(ml * 2) / 2;
+      kclOut.ml = mlR;
+      let html = `<div class="big">${valBox("KCl 7,5 %", fmt(mlR, 1), "ml")}${valBox("Výsledné K", fmt(resK(mlR), 2), "mmol/l")}</div>`;
+      html += `<p class="note">Přidá ${fmt(mlR * KCL_MMOL_PER_ML, 1)} mmol K⁺ do ${v.toLocaleString("cs-CZ")} ml vaku, zaokrouhleno na 0,5 ml.</p>`;
+      if (t > 5) html += `<p class="note alert">Cílové K nad 5 mmol/l je neobvyklé, ověřte zadání.</p>`;
+      el.innerHTML = html;
+      hit = rows.reduce((b, r, i) => Math.abs(r - mlR) < Math.abs(rows[b] - mlR) ? i : b, 0);
+      if (Math.abs(rows[hit] - mlR) > 0.01) hit = -1;
+    }
+    $("t-kcl").querySelector("tbody").innerHTML = rows.map((r, i) =>
+      `<tr class="${i === hit ? "hit" : ""}"><td>${r === 0 ? "bez KCl" : "+ " + fmt(r, 1) + " ml"}</td><td>${fmt(resK(r), 2)}</td></tr>`).join("");
+  }
+
+  function citrate() {
+    const x = num("caiPost"), now = num("citNow");
+    const el = $("r-cit");
+    if (x === null || isNaN(x)) { el.innerHTML = missing("Zadejte CaI za filtrem."); fillTable("t-cit", CIT, -1); return; }
+    const i = CIT.findIndex((r) => r.test(x));
+    const r = CIT[i];
+    const cls = r.d === 0 ? "ok" : Math.abs(r.d) >= 0.3 ? "bad" : "warn";
+    let html = `<div><span class="pill ${cls}">${r.d === 0 ? "Beze změny" : (r.d > 0 ? "Zvýšit citrát o " : "Snížit citrát o ") + fmt(Math.abs(r.d), 1) + " mmol/l"}</span></div>`;
+    html += `<p class="note">CaI ${fmt(x)} spadá do pásma ${r.label} mmol/l. ${r.d > 0 ? "Antikoagulace v okruhu je nedostatečná." : r.d < 0 ? "Citrátu je v okruhu víc, než je třeba." : "Cíl je splněn."}</p>`;
+    if (now !== null && !isNaN(now) && r.d !== 0) {
+      const nd = now + r.d;
+      html += `<div class="big">${valBox("Nový citrát", fmt(nd, 1), "mmol/l")}${cur.flow ? valBox("Posun", fmt(citRate(nd, cur.flow), 0), "ml/h") : ""}</div>`;
+      if (cur.flow) html += `<p class="note">Posun při průtoku ${fmt(cur.flow, 0)} ml/min z úvodního nastavení (dosud ${fmt(citRate(now, cur.flow), 0)} ml/h).</p>`;
+    }
+    el.innerHTML = html;
+    fillTable("t-cit", CIT, i);
+  }
+
+  function calcium() {
+    const x = num("caiSys"), now = num("caNow");
+    const el = $("r-ca");
+    if (x === null || isNaN(x)) { el.innerHTML = missing("Zadejte systémové CaI."); fillTable("t-ca", CA, -1); return; }
+    const i = CA.findIndex((r) => r.test(x));
+    const r = CA[i];
+    const cls = r.d === 0 ? "ok" : r.extreme ? "bad" : "warn";
+    let html = `<div><span class="pill ${cls}">${r.d === 0 ? "Beze změny" : (r.d > 0 ? "Zvýšit kalcium o " : "Snížit kalcium o ") + fmt(Math.abs(r.d), 1) + " mmol/l"}</span></div>`;
+    html += `<p class="note">CaI ${fmt(x)} spadá do pásma ${r.label} mmol/l.</p>`;
+    if (now !== null && !isNaN(now) && r.d !== 0) {
+      const nd = Math.max(0, now + r.d);
+      html += `<div class="big">${valBox("Nové kalcium", fmt(nd, 1), "mmol/l")}${cur.eff ? valBox("Posun CaCl₂", fmt(caRate(nd, cur.eff), 1), "ml/h") : ""}</div>`;
+      if (cur.eff) html += `<p class="note">Posun při efluentu ${cur.eff.toLocaleString("cs-CZ")} ml/h z úvodního nastavení (dosud ${fmt(caRate(now, cur.eff), 1)} ml/h).</p>`;
+    }
+    html += r.extreme
+      ? `<p class="note alert">Krajní hodnota: upravte hned, bez čekání 12 h od poslední změny.</p>`
+      : r.d !== 0 ? `<p class="note">Pokud byl posun kalcia měněn před méně než 12 h, další změnu zatím nedělejte.</p>` : "";
+    el.innerHTML = html;
+    fillTable("t-ca", CA, i);
+  }
+
+  function accumulation() {
+    const na = num("na"), cl = num("cl"), hco3 = num("hco3"), ca = num("caTot"), cai = num("caiRatio");
+    const el = $("r-acc");
+    let html = "";
+    let flags = 0;
+    if ([na, cl, hco3].every((v) => v !== null && !isNaN(v))) {
+      const ag = na - (cl + hco3);
+      const cls = ag > 12 ? "bad" : ag < 8 ? "warn" : "ok";
+      if (ag > 12) flags++;
+      html += `<div class="big">${valBox("Anion gap", fmt(ag, 1), "mmol/l")}</div>`;
+      html += `<div><span class="pill ${cls}">${ag > 12 ? "Zvýšený, možná akumulace citrátu" : ag < 8 ? "Pod normou 8–12" : "V normě 8–12"}</span></div>`;
+    } else html += missing("Pro anion gap zadejte Na, Cl a HCO₃⁻.");
+    if (ca > 0 && cai > 0) {
+      const ratio = ca / cai;
+      const cls = ratio > 2.5 ? "bad" : "ok";
+      if (ratio > 2.5) flags++;
+      html += `<div class="big">${valBox("Poměr Ca / CaI", fmt(ratio, 2), "")}</div>`;
+      html += `<div><span class="pill ${cls}">${ratio > 2.5 ? "Nad 2,5, známka akumulace citrátu" : "Do 2,5, v pořádku"}</span></div>`;
+    } else html += missing("Pro poměr zadejte Ca celkové a CaI.");
+    if (flags === 2) html += `<p class="note alert">Obě známky akumulace citrátu jsou přítomné.</p>`;
+    el.innerHTML = html;
+  }
+
+  let mode = "acid";
+  function abr() {
+    const f = num("flowNow"), d = num("dialNow");
+    const el = $("r-abr");
+    if (!(f > 0) || !(d > 0)) { el.innerHTML = missing("Zadejte aktuální průtok a dialyzát."); return; }
+    const acid = mode === "acid";
+    const f2 = Math.round(f * (acid ? 1.2 : 0.8));
+    const d2 = Math.round((d * (acid ? 0.8 : 1.2)) / 50) * 50;
+    el.innerHTML = `<ol class="steps">
+      <li>${acid ? "Zvýšit" : "Snížit"} průtok krve o 20 %: <b>${fmt(f, 0)} → ${fmt(f2, 0)} ml/min</b>. Citrát se úměrně ${acid ? "zvýší" : "sníží"}, dávku dialyzátu neměnit.</li>
+      <li>Pokud to nestačí a není trend ke zlepšení: ${acid ? "snížit" : "zvýšit"} dialyzát o 20 %: <b>${d.toLocaleString("cs-CZ")} → ${d2.toLocaleString("cs-CZ")} ml/h</b>. Průtok neměnit.</li>
+    </ol>
+    <p class="note">${acid ? "Víc krve znamená víc citrátu, který se v játrech mění na bikarbonát. Méně dialyzátu znamená menší ztrátu bikarbonátu." : "Méně krve znamená méně citrátu a tím méně vzniklého bikarbonátu. Víc dialyzátu odstraní víc bikarbonátu."}</p>`;
+  }
+  $("b-acid").addEventListener("click", () => { mode = "acid"; $("b-acid").setAttribute("aria-pressed", "true"); $("b-alk").setAttribute("aria-pressed", "false"); abr(); });
+  $("b-alk").addEventListener("click", () => { mode = "alk"; $("b-alk").setAttribute("aria-pressed", "true"); $("b-acid").setAttribute("aria-pressed", "false"); abr(); });
+
+  // keep the two systemic CaI inputs in sync
+  $("caiSys").addEventListener("input", () => { $("caiRatio").value = $("caiSys").value; accumulation(); });
+  $("caiRatio").addEventListener("input", () => { $("caiSys").value = $("caiRatio").value; calcium(); });
+
+  function mc4() {
+    const n = (v, d = 0) => (v === null || v === undefined || isNaN(v)) ? "" : fmt(v, d);
+    const ml = (v) => Number.isInteger(v) ? String(v) : fmt(v, 1);
+    const kNum = kclOut.k0 !== null && !isNaN(kclOut.k0) ? String(kclOut.k0).replace(".", ",") : "2";
+    const vol = kclOut.v > 0 ? kclOut.v : 5000;
+    const bag = `Cica vaky K${kNum} ${vol}ml` + (kclOut.ml > 0 ? ` + ${ml(kclOut.ml)}ml KCL 7.5%` : "");
+    const row = (label, unit, val) => {
+      const left = label.padEnd(24, ".") + unit;
+      return left + ".".repeat(28) + " " + val;
+    };
+    const out = [
+      "CVVHD:\t\t\t\t(úvod)",
+      bag,
+      row("průtok ", "ml/min", n(cur.flow)),
+      row("dialyzát", "ml/hod", cur.dial ? String(cur.dial) : ""),
+      row("Na Citrát 4%", "mmol/l", cur.cd ? n(cur.cd, 1) : ""),
+      row("CaCl2 10% ", "mmol/l", cur.kd ? n(cur.kd, 1) : ""),
+      row("ultrafiltrace", "ml/hod", cur.uf ? String(cur.uf) : ""),
+    ].join("\n");
+    $("mc4").textContent = out;
+  }
+  $("stdBtn").addEventListener("click", () => {
+    $("citDose").value = "4,0"; $("caDose").value = "1,7";
+    $("citNow").value = "4,0"; $("caNow").value = "1,7";
+    all();
+  });
+  const copyFrom = (preId, msgId) => () => {
+    const pre = $(preId), msg = $(msgId);
+    const fallback = () => {
+      const r = document.createRange(); r.selectNodeContents(pre);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      msg.textContent = "Text je označený, zkopírujte ho Ctrl+C.";
+    };
+    try {
+      navigator.clipboard.writeText(pre.textContent).then(() => { msg.textContent = "Zkopírováno."; }, fallback);
+    } catch (e) { fallback(); }
+  };
+  $("copyBtn").addEventListener("click", copyFrom("mc4", "copyMsg"));
+  $("copyOdb").addEventListener("click", copyFrom("odbery", "copyOdbMsg"));
+
+  const all = () => { start(); kcl(); citrate(); calcium(); accumulation(); abr(); mc4(); };
+  document.querySelectorAll("input").forEach((i) => i.addEventListener("input", all));
+  all();
+})();
+</script>
+</body>
+</html>

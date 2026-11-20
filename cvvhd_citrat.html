@@ -101,6 +101,10 @@ ol.steps b { font-family: var(--font-mono); }
 .guide-head strong { color: var(--accent); }
 .guide table td, .guide table th { border-bottom-color: color-mix(in srgb, var(--accent) 20%, transparent); }
 .sub { margin: 8px 0 0; font-size: 0.95rem; }
+.ag-list { margin: 4px 0 0; padding-left: 20px; display: grid; gap: 2px; }
+label.chk { display: flex; gap: 8px; align-items: center; grid-column: 1 / -1; font-size: 0.88rem; color: var(--fg); }
+label.chk input { width: 18px; height: 18px; padding: 0; accent-color: var(--accent); }
+.stage { display: grid; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
 .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
 footer { font-size: 0.8rem; color: var(--muted); max-width: 70ch; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -213,10 +217,32 @@ footer { font-size: 0.8rem; color: var(--muted); max-width: 70ch; }
         <label for="hco3">HCO₃⁻ <small>mmol/l</small><input id="hco3" inputmode="decimal" value="23"></label>
         <label for="caTot">Ca celkové <small>mmol/l</small><input id="caTot" inputmode="decimal" value="2,30"></label>
         <label for="caiRatio">CaI systémové <small>mmol/l</small><input id="caiRatio" inputmode="decimal" value="1,08"></label>
+        <label class="chk" for="chkFall"><input type="checkbox" id="chkFall"> CaI klesá i přes zvyšování Ca</label>
+        <label class="chk" for="chkLac"><input type="checkbox" id="chkLac"> Laktát roste</label>
+        <label class="chk" for="chkNoImp"><input type="checkbox" id="chkNoImp"> Bez zlepšení po úpravě (4–6 h)</label>
       </div>
       <div class="result" id="r-acc"></div>
     </div>
-    <p class="note">Anion gap á 12 h (norma 8–12). Poměr Ca/CaI 1× denně (do 2,5). Vyšší hodnoty jsou známkou akumulace citrátu.</p>
+    <p class="note">Anion gap á 12 h (norma 8–12). Poměr Ca/CaI 1× denně (do 2,5). Vyšší hodnoty jsou známkou akumulace citrátu. Postup při akumulaci není součástí protokolu oddělení; vychází z obecné praxe a musí ho schválit vedoucí lékař.</p>
+    <div class="note">
+      <strong>Kdy stoupá anion gap:</strong>
+      <ul class="ag-list">
+        <li>laktát (laktátová acidóza)</li>
+        <li>ketolátky (diabetická ketoacidóza)</li>
+        <li>urémie (fosfáty, sulfáty)</li>
+        <li>intoxikace (metanol, etylenglykol, salicyláty)</li>
+        <li>citrát, když se nemetabolizuje</li>
+      </ul>
+    </div>
+    <h3 class="sub">Rychlý přehled</h3>
+    <pre id="accSheet" class="mc4" tabindex="0">Akumulace citrátu – podezření:
+Ca/CaI > 2,5  NEBO  AG > 12 + klesá CaI
+Postup: ↓ průtok 20 %, ↑ dialyzát 20 %, korekce Ca, kontrola za 4–6 h
+Bez zlepšení → zastavit citrát, ↓/stop CaCl2, CaI za 1–2 h</pre>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <button type="button" id="copyAcc" class="btn">Zkopírovat přehled</button>
+      <span id="copyAccMsg" class="note" aria-live="polite"></span>
+    </div>
   </section>
 
   <!-- 5. ABR -->
@@ -248,7 +274,7 @@ footer { font-size: 0.8rem; color: var(--muted); max-width: 70ch; }
 CaI za filtrem         5 min po zahájení, pak 06, 12, 18, 24 hod
 Na, K, Cl, CaI         06, 12, 18, 24 hod
 žilní KP               06, 12, 18, 24 hod
-Ca celk., Mg           1× denně (06 hod)</pre>
+Ca celk., Mg, laktát   1× denně (06 hod)</pre>
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
       <button type="button" id="copyOdb" class="btn">Zkopírovat odběry</button>
       <span id="copyOdbMsg" class="note" aria-live="polite"></span>
@@ -426,7 +452,37 @@ Ca celk., Mg           1× denně (06 hod)</pre>
       html += `<div class="big">${valBox("Poměr Ca / CaI", fmt(ratio, 2), "")}</div>`;
       html += `<div><span class="pill ${cls}">${ratio > 2.5 ? "Nad 2,5, známka akumulace citrátu" : "Do 2,5, v pořádku"}</span></div>`;
     } else html += missing("Pro poměr zadejte Ca celkové a CaI.");
-    if (flags === 2) html += `<p class="note alert">Obě známky akumulace citrátu jsou přítomné.</p>`;
+    // Stupeň akumulace
+    const ag = [na, cl, hco3].every((v) => v !== null && !isNaN(v)) ? na - (cl + hco3) : null;
+    const ratio = ca > 0 && cai > 0 ? ca / cai : null;
+    const fall = $("chkFall").checked, lac = $("chkLac").checked, noImp = $("chkNoImp").checked;
+    const acid = hco3 !== null && !isNaN(hco3) && hco3 < 22;
+    const signs = [ratio !== null && ratio > 2.5, ag !== null && ag > 12, fall, acid];
+    const count = signs.filter(Boolean).length;
+    const labels = ["Ca/CaI > 2,5", "AG > 12", "CaI klesá přes substituci", "acidóza (HCO₃⁻ < 22)"];
+    const present = labels.filter((_, i) => signs[i]);
+    let stage;
+    if (count >= 1 && (noImp || (ratio !== null && ratio > 3) || (cai > 0 && cai < 0.9) || lac)) stage = "severe";
+    else if (count >= 2 || (ratio !== null && ratio > 2.5)) stage = "acc";
+    else if ((ratio !== null && ratio > 2.1) || count === 1) stage = "watch";
+    else stage = "ok";
+    const f = cur.flow, d = cur.dial;
+    const steps = {
+      ok: { cls: "ok", t: "Bez známek akumulace", body: "Pokračovat v rutinní monitoraci." },
+      watch: { cls: "warn", t: "Sledovat", body: `<ol class="steps"><li>Ca celk. a CaI kontrolovat á 6 h, ne jen 1× denně.</li><li>Hledat příčinu: laktát, jaterní testy, perfuze.</li></ol>` },
+      acc: { cls: "bad", t: "Akumulace citrátu: volat lékaře", body: `<ol class="steps">
+        <li>Snížit průtok krve o 20 %${f ? `: <b>${fmt(f, 0)} → ${fmt(Math.round(f * 0.8), 0)} ml/min</b>` : ""}. Citrát se úměrně sníží.</li>
+        <li>Zvýšit dialyzát o 20 %${d ? `: <b>${d.toLocaleString("cs-CZ")} → ${(Math.round(d * 1.2 / 50) * 50).toLocaleString("cs-CZ")} ml/h</b>` : ""}.</li>
+        <li>Systémové CaI korigovat podle tabulky kalcia, i před uplynutím 12 h.</li>
+        <li>Kontrola Ca celk., CaI, ABR za 4–6 h.</li></ol>` },
+      severe: { cls: "bad", t: "Těžká / bez zlepšení: zvážit zastavení citrátu", body: `<ol class="steps">
+        <li>Zastavit citrát, přejít na jinou antikoagulaci (heparin nebo bez antikoagulace), případně ukončit CRRT.</li>
+        <li>CaCl₂ hned snížit nebo vypnout: po zastavení citrátu se uvolní vázané kalcium a CaI může rychle stoupnout.</li>
+        <li>Kontrola CaI za 1–2 h, bolus kalcia jen podle systémového CaI.</li>
+        <li>Akumulace znamená, že játra citrát nezpracují; zvážit kontraindikace (jaterní selhání, laktátová acidóza).</li></ol>` },
+    }[stage];
+    html += `<div class="stage"><span class="pill ${steps.cls}">${steps.t}</span>${present.length ? `<p class="note">Přítomné známky: ${present.join(", ")}.</p>` : ""}${steps.body}</div>`;
+    if (hco3 > 28 && !(ratio > 2.5)) html += `<p class="note alert">HCO₃⁻ nad 28 při normálním poměru Ca/CaI ukazuje spíš na přetížení citrátem (alkalóza), ne na akumulaci. Postupujte podle části ABR.</p>`;
     el.innerHTML = html;
   }
 
@@ -490,6 +546,7 @@ Ca celk., Mg           1× denně (06 hod)</pre>
   };
   $("copyBtn").addEventListener("click", copyFrom("mc4", "copyMsg"));
   $("copyOdb").addEventListener("click", copyFrom("odbery", "copyOdbMsg"));
+  $("copyAcc").addEventListener("click", copyFrom("accSheet", "copyAccMsg"));
 
   const all = () => { start(); kcl(); citrate(); calcium(); accumulation(); abr(); mc4(); };
   document.querySelectorAll("input").forEach((i) => i.addEventListener("input", all));

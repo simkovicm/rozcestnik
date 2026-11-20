@@ -282,6 +282,35 @@ Ca celk., Mg, laktát   1× denně (06 hod)</pre>
     <p class="note">Hodnoty se berou z úvodního nastavení a z části KCl. U citrátu a CaCl₂ se zapisuje dávka nastavená v CiCa modulu (citrát mmol/l krve, kalcium mmol/l filtrátu). Skutečné rychlosti pump v ml/h jsou v úvodním nastavení nahoře.</p>
   </section>
 
+  <!-- 7. Heparinová CVVHD -->
+  <section aria-labelledby="h7">
+    <h2 id="h7"><span class="tag">Alternativa</span> CVVHD s heparinem (bez citrátu)</h2>
+    <p class="note">Pro pacienty, u kterých citrát nelze použít (laktátová acidóza, jaterní selhání). Dávky jsou obecná praxe, ne protokol oddělení; dávku heparinu řiďte podle aPTT nebo ACT.</p>
+    <div class="cols">
+      <div class="fields">
+        <label for="hWt">Hmotnost <small>kg</small><input id="hWt" inputmode="decimal" value="85"></label>
+        <label for="hDose">Dávka dialýzy <small>ml/kg/h (25–35)</small><input id="hDose" inputmode="decimal" value="30"></label>
+        <label for="hFlow">Průtok krve <small>ml/min</small><input id="hFlow" inputmode="decimal" value="140"></label>
+        <label for="hUf">Ultrafiltrace <small>ml/h</small><input id="hUf" inputmode="decimal" value="150"></label>
+        <label for="hBag">Vak <small>název</small><input id="hBag" value="Medisol bio" style="font-family:var(--font-body)"></label>
+        <label for="hBagVol">Objem vaku <small>ml</small><input id="hBagVol" inputmode="decimal" value="5000"></label>
+        <label for="hBagK">K ve vaku <small>mmol/l, podle etikety</small><input id="hBagK" inputmode="decimal" value="0"></label>
+        <label for="hKTarget">Cílové K <small>mmol/l</small><input id="hKTarget" inputmode="decimal" value="4,0"></label>
+        <label for="hHepU">Heparin ve stříkačce <small>j.</small><input id="hHepU" inputmode="decimal" value="20000"></label>
+        <label for="hHepV">Objem stříkačky <small>ml F1/1</small><input id="hHepV" inputmode="decimal" value="50"></label>
+        <label for="hHepD">Dávka heparinu <small>j./kg/h (5–10)</small><input id="hHepD" inputmode="decimal" value="10"></label>
+      </div>
+      <div class="result" id="r-hep"></div>
+    </div>
+    <h3 class="sub">Výstup do MC4</h3>
+    <pre id="hepMc4" class="mc4" tabindex="0"></pre>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <button type="button" id="copyHep" class="btn">Zkopírovat</button>
+      <span id="copyHepMsg" class="note" aria-live="polite"></span>
+    </div>
+    <p class="note">Kontroly: aPTT á 6 h (cíl asi 1,5–2× normy), trombocyty denně (HIT). Pravidlo průtok = dialyzát ÷ 20 platí jen pro citrát. Ověřte, zda vak obsahuje fosfáty; bez nich po několika dnech hrozí hypofosfatémie.</p>
+  </section>
+
   <footer>
     Pomůcka přepisuje interní protokol „Kontinuální veno-venózní citrátová hemodialýza (CVVHD), CiCa modul“. Nenahrazuje klinický úsudek ani nastavení přístroje. Kontraindikace: laktátová acidóza, jaterní selhání. Dialyzát Ci-Ca K2 nebo K4, citrát Na citrát 4 %, kalcium CaCl₂ 10 % (4,56 mmol/10 ml), výpočet posunu počítá s neředěným roztokem; Ca glukonát má poloviční obsah kalcia.
   </footer>
@@ -547,8 +576,54 @@ Ca celk., Mg, laktát   1× denně (06 hod)</pre>
   $("copyBtn").addEventListener("click", copyFrom("mc4", "copyMsg"));
   $("copyOdb").addEventListener("click", copyFrom("odbery", "copyOdbMsg"));
   $("copyAcc").addEventListener("click", copyFrom("accSheet", "copyAccMsg"));
+  $("copyHep").addEventListener("click", copyFrom("hepMc4", "copyHepMsg"));
 
-  const all = () => { start(); kcl(); citrate(); calcium(); accumulation(); abr(); mc4(); };
+  function hep() {
+    const wt = num("hWt"), dose = num("hDose"), flow = num("hFlow"), uf = num("hUf");
+    const vol = num("hBagVol"), k0 = num("hBagK"), kt = num("hKTarget");
+    const hu = num("hHepU"), hv = num("hHepV"), hd = num("hHepD");
+    const bagName = ($("hBag").value || "").trim() || "vak";
+    const el = $("r-hep");
+    let html = "";
+    let dial = null, kclMl = null, hepRate = null;
+    if (wt > 0 && dose > 0) {
+      dial = Math.round(wt * dose / 100) * 100;
+      const ufV = uf > 0 ? uf : 0;
+      const eff = dial + ufV;
+      html += `<div class="big">${valBox("Dialyzát", dial.toLocaleString("cs-CZ"), "ml/h")}${valBox("Efluent", fmt(eff / wt, 1), "ml/kg/h")}</div>`;
+      if (dose < 25 || dose > 35) html += `<p class="note alert">Dávka mimo obvyklých 25–35 ml/kg/h.</p>`;
+      if (flow > 0 && dial / (flow * 60) > 0.4) html += `<p class="note alert">Dialyzát je vysoký vůči průtoku krve (poměr ${fmt(dial / (flow * 60), 2)}); zvažte vyšší průtok.</p>`;
+    } else html += missing("Zadejte hmotnost a dávku dialýzy.");
+    if (vol > 0 && k0 !== null && !isNaN(k0) && kt !== null && !isNaN(kt)) {
+      if (kt <= k0) kclMl = 0;
+      else kclMl = Math.round(((kt - k0) * vol / 1000) / (KCL_MMOL_PER_ML - kt / 1000) * 2) / 2;
+      html += `<div class="big">${valBox("KCl 7,5 % do vaku", fmt(kclMl, 1), "ml")}</div>`;
+    }
+    if (wt > 0 && hu > 0 && hv > 0 && hd > 0) {
+      const conc = hu / hv;
+      const uh = hd * wt;
+      hepRate = Math.round(uh / conc * 10) / 10;
+      html += `<div class="big">${valBox("Heparin", fmt(hepRate, 1), "ml/h")}${valBox("", Math.round(uh).toLocaleString("cs-CZ"), "j./h")}</div>`;
+      html += `<p class="note">${Math.round(hu).toLocaleString("cs-CZ")} j. / ${fmt(hv, 0)} ml = ${fmt(conc, 0)} j./ml; ${fmt(hd, 1)} j./kg/h × ${fmt(wt, 0)} kg.</p>`;
+      if (hd < 5 || hd > 10) html += `<p class="note alert">Dávka heparinu mimo obvyklých 5–10 j./kg/h. Ověřte záměr (např. riziko krvácení).</p>`;
+    } else html += missing("Zadejte heparin, objem stříkačky a dávku.");
+    el.innerHTML = html;
+
+    const row = (label, unit, val) => label.padEnd(24, ".") + unit + ".".repeat(28) + " " + val;
+    const ml = (v) => Number.isInteger(v) ? String(v) : fmt(v, 1);
+    const bag = `${bagName} ${vol > 0 ? vol : 5000}ml` + (kclMl > 0 ? ` + ${ml(kclMl)}ml KCL 7.5%` : "");
+    $("hepMc4").textContent = [
+      "CVVHD:\t\t\t\t(úvod, heparin)",
+      bag,
+      row("průtok ", "ml/min", flow > 0 ? fmt(flow, 0) : ""),
+      row("dialyzát", "ml/hod", dial ? String(dial) : ""),
+      row("substituát", "ml/hod", "0"),
+      row("ultrafiltrace", "ml/hod", uf > 0 ? String(uf) : ""),
+      row(`Heparin ${hu > 0 ? Math.round(hu) : ""} j. do F1/1 ${hv > 0 ? fmt(hv, 0) : ""} ml `, "ml/hod", hepRate ? fmt(hepRate, 1) : ""),
+    ].join("\n");
+  }
+
+  const all = () => { start(); kcl(); citrate(); calcium(); accumulation(); abr(); mc4(); hep(); };
   document.querySelectorAll("input").forEach((i) => i.addEventListener("input", all));
   all();
 })();

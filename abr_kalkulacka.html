@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalkulačka ABR a kompenzací</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: vlevo vstupy, vpravo závěr a kroky hodnocení; na telefonu pod sebou. */
+:root{
+  --bg:#f3f5f9; --surface:#ffffff; --ink:#15233d; --muted:#5a6a85; --line:#d8deea;
+  --accent:#1d3f7a; --accent-soft:#e6ecf7;
+  --ok:#1c7a4c; --ok-soft:#e3f3ea; --warn:#9a5b00; --warn-soft:#fbefd9; --crit:#b3261e; --crit-soft:#fbe6e4;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1624; --surface:#182132; --ink:#e6ebf5; --muted:#98a6bf; --line:#2c3850;
+    --accent:#8fb0ea; --accent-soft:#22304a;
+    --ok:#63c994; --ok-soft:#173327; --warn:#e7b25a; --warn-soft:#3a2d14; --crit:#f28b82; --crit-soft:#3d1d1b;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1624; --surface:#182132; --ink:#e6ebf5; --muted:#98a6bf; --line:#2c3850;
+  --accent:#8fb0ea; --accent-soft:#22304a;
+  --ok:#63c994; --ok-soft:#173327; --warn:#e7b25a; --warn-soft:#3a2d14; --crit:#f28b82; --crit-soft:#3d1d1b;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45}
+.wrap{max-width:1120px;margin:0 auto;padding:20px 16px 40px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin-bottom:16px}
+h1{font-size:22px;font-weight:600;margin:0;text-wrap:balance}
+header p{margin:0;color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:minmax(280px,360px) 1fr;gap:16px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.card h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:0 0 10px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:3px}
+.field.full{grid-column:1/-1}
+label{font-size:13px;color:var(--muted)}
+label b{color:var(--ink);font-weight:500}
+input[type=text],select{font:inherit;font-family:var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:7px 9px;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input.bad{border-color:var(--crit)}
+.group + .group{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{flex:1;font:inherit;font-size:13px;padding:7px 6px;border:0;background:var(--bg);color:var(--muted);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--surface);font-weight:500}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.btn{font:inherit;font-size:13px;padding:7px 12px;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.out{display:flex;flex-direction:column;gap:12px}
+.verdict{border-left:5px solid var(--accent)}
+.verdict.crit{border-left-color:var(--crit)} .verdict.warn{border-left-color:var(--warn)} .verdict.ok{border-left-color:var(--ok)}
+.verdict ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+.verdict li{font-size:17px;font-weight:600;text-wrap:balance}
+.verdict li.sub{font-size:15px;font-weight:400}
+.note{color:var(--muted);font-size:13px;margin:8px 0 0}
+.step{display:grid;grid-template-columns:1fr auto;gap:4px 12px}
+.step h3{font-size:15px;font-weight:600;margin:0}
+.step .body{grid-column:1/-1;font-size:14px}
+.step .body p{margin:6px 0 0}
+.pill{font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;white-space:nowrap;align-self:start}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.crit{background:var(--crit-soft);color:var(--crit)} .pill.info{background:var(--accent-soft);color:var(--accent)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.kv{display:grid;grid-template-columns:1fr auto;gap:2px 16px;margin-top:8px;max-width:440px}
+.kv span:nth-child(even){font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.kv .tot{border-top:1px solid var(--line);padding-top:3px;font-weight:600}
+.track{position:relative;height:26px;margin:22px 0 20px;background:var(--bg);border:1px solid var(--line);border-radius:6px}
+.band{position:absolute;top:0;bottom:0;background:var(--ok-soft);border-left:2px solid var(--ok);border-right:2px solid var(--ok)}
+.band i{position:absolute;top:-19px;left:50%;transform:translateX(-50%);font-style:normal;font-size:11px;color:var(--ok);white-space:nowrap}
+.mark{position:absolute;top:-4px;bottom:-4px;width:3px;background:var(--ink);border-radius:2px}
+.mark i{position:absolute;bottom:-19px;left:50%;transform:translateX(-50%);font-style:normal;font-size:11px;white-space:nowrap;font-family:var(--mono)}
+.empty{color:var(--muted)}
+.next h3{font-size:14px;font-weight:600;margin:0 0 5px}
+.next ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.urgent{background:var(--crit-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+.urgent h3{color:var(--crit)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+footer{margin-top:18px;color:var(--muted);font-size:12.5px;max-width:75ch}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Kalkulačka ABR a kompenzací</h1>
+  <p>Rychlá orientace u interních stavů: porucha, kompenzace, aniontová mezera, doporučené další kroky</p>
+</header>
+
+<div class="grid">
+<form class="card" id="form" autocomplete="off">
+  <div class="group">
+    <h2>Krevní plyny</h2>
+    <div class="fields">
+      <div class="field full">
+        <label>Vzorek</label>
+        <div class="seg" role="group" aria-label="Typ vzorku">
+          <button type="button" id="s-art" aria-pressed="true">Arteriální</button>
+          <button type="button" id="s-ven" aria-pressed="false">Venózní</button>
+        </div>
+      </div>
+      <div class="field"><label for="ph"><b>pH</b></label><input type="text" inputmode="decimal" id="ph"></div>
+      <div class="field"><label for="pco2"><b>pCO₂</b> <span id="pco2u">(kPa)</span></label><input type="text" inputmode="decimal" id="pco2"></div>
+      <div class="field"><label for="po2"><b>pO₂</b> <span id="po2u">(kPa)</span></label><input type="text" inputmode="decimal" id="po2"></div>
+      <div class="field"><label for="so2"><b>SO₂</b> (%)</label><input type="text" inputmode="decimal" id="so2"></div>
+      <div class="field full">
+        <label>Jednotky pCO₂</label>
+        <div class="seg" role="group" aria-label="Jednotky pCO2">
+          <button type="button" id="u-kpa" aria-pressed="true">kPa</button>
+          <button type="button" id="u-mm" aria-pressed="false">mmHg</button>
+        </div>
+      </div>
+      <div class="field"><label for="hco3"><b>HCO₃⁻ akt.</b> (mmol/l)</label><input type="text" inputmode="decimal" id="hco3" placeholder="dopočítá se"></div>
+      <div class="field"><label for="be"><b>BE</b> (mmol/l)</label><input type="text" inputmode="decimal" id="be" placeholder="dopočítá se"></div>
+      <div class="field full"><label for="fio2"><b>FiO₂</b> (%)</label><input type="text" inputmode="decimal" id="fio2" placeholder="21 (vzduch)"></div>
+    </div>
+  </div>
+  <div class="group">
+    <h2>Ionty a metabolity</h2>
+    <div class="fields">
+      <div class="field"><label for="na"><b>Na⁺</b> (mmol/l)</label><input type="text" inputmode="decimal" id="na"></div>
+      <div class="field"><label for="cl"><b>Cl⁻</b> (mmol/l)</label><input type="text" inputmode="decimal" id="cl"></div>
+      <div class="field"><label for="k"><b>K⁺</b> (mmol/l)</label><input type="text" inputmode="decimal" id="k"></div>
+      <div class="field"><label for="alb"><b>Albumin</b> (g/l)</label><input type="text" inputmode="decimal" id="alb"></div>
+      <div class="field"><label for="lac"><b>Laktát</b> (mmol/l)</label><input type="text" inputmode="decimal" id="lac"></div>
+      <div class="field"><label for="glu"><b>Glukóza</b> (mmol/l)</label><input type="text" inputmode="decimal" id="glu"></div>
+    </div>
+  </div>
+  <div class="actions">
+    <button type="button" class="btn primary" id="copy">Kopírovat závěr</button>
+    <button type="button" class="btn" id="clear">Vymazat</button>
+    <button type="button" class="btn" id="demo">Načíst příklad</button>
+  </div>
+  <p class="note" id="copied" aria-live="polite"></p>
+</form>
+
+<div class="out" id="out"></div>
+</div>
+
+<footer>
+  Pomůcka k rychlé orientaci u běžných interních stavů, nenahrazuje klinický úsudek. Není určena pro pacienty na dialýze a CRRT. Alveolo-arteriální gradient počítá s tlakem 101,3 kPa a respiračním kvocientem 0,8. Doporučené kroky jsou obecný výčet, vyber z nich podle klinického obrazu. Referenční meze: pH 7,35–7,45; pCO₂ 4,7–6,0 kPa; HCO₃⁻ 22–26 mmol/l; AG (Na − Cl − HCO₃) do 12 mmol/l, korekce +0,25 mmol/l na každý g/l albuminu pod 40. U venózního vzorku se pro hodnocení používá orientační odhad arteriálních hodnot (pH +0,03, pCO₂ −0,7 kPa); platí pro centrální žilní krev při stabilním oběhu, v šoku je rozdíl větší.
+</footer>
+</div>
+
+<script>
+const K = 7.50062; // mmHg na 1 kPa
+
+// ---------- čistá logika ----------
+function analyze(i){
+  const r = {dx:[], sub:[], steps:[], urgent:[], work:[], treat:[], level:'ok'};
+  const lvl = l => { const o={ok:0,warn:1,crit:2}; if(o[l]>o[r.level]) r.level=l; };
+  const pmm = i.pco2*K;
+  const hcalc = 0.0307*pmm*Math.pow(10, i.pH-6.1);
+  const hco3 = i.hco3 ?? hcalc;
+  const pHa = i.venous ? i.pH+0.03 : i.pH;
+  const pa  = i.venous ? i.pco2-0.7 : i.pco2;   // kPa, odhad arteriální
+  const pam = pa*K;
+  const sbe = i.be ?? 0.9287*(hco3-24.4+14.83*(i.pH-7.4));
+  Object.assign(r,{hco3,hcalc,pHa,pa,sbe,hco3Entered:i.hco3!=null,beEntered:i.be!=null});
+
+  if(i.hco3!=null && Math.abs(i.hco3-hcalc)>3)
+    r.sub.push('Zadaný HCO₃⁻ se liší od hodnoty dopočítané z pH a pCO₂ ('+f(hcalc,1)+' mmol/l) o více než 3 mmol/l. Zkontroluj zadání; standardní HCO₃⁻ sem nepatří.');
+
+  // 1) pH
+  let phState = pHa<7.35?'acid':pHa>7.45?'alk':'norm';
+  const phTxt = phState==='acid' ? (pHa<7.20?'Těžká acidémie':'Acidémie') : phState==='alk' ? (pHa>7.55?'Těžká alkalémie':'Alkalémie') : 'pH v normě';
+  const phLvl = phState==='norm'?'ok':(pHa<7.20||pHa>7.55)?'crit':'warn';
+  lvl(phLvl);
+  r.steps.push({t:'1. pH', pill:phTxt, lvl:phLvl,
+    html:'<p>pH <span class="num">'+f(i.pH,3)+'</span>'+(i.venous?' (venózní; odhad arteriálního <span class="num">'+f(pHa,2)+'</span>)':'')+'.</p>'});
+
+  // 2) primární porucha
+  const lowH=hco3<22, highH=hco3>26, lowP=pa<4.7, highP=pa>6.0;
+  let prim='NORM';
+  if(phState==='acid') prim = lowH&&highP?'MIXAC': lowH?'MAC': highP?'RAC':'UNCLEAR';
+  else if(phState==='alk') prim = highH&&lowP?'MIXAL': highH?'MAL': lowP?'RAL':'UNCLEAR';
+  else {
+    if(lowH&&lowP) prim = pHa<7.40?'MAC':'RAL';
+    else if(highH&&highP) prim = pHa>7.40?'MAL':'RAC';
+    else if(lowH) prim='MAC'; else if(highH) prim='MAL';
+    else if(highP) prim='RAC'; else if(lowP) prim='RAL';
+  }
+  r.prim=prim;
+  const names={MAC:'Metabolická acidóza',MAL:'Metabolická alkalóza',RAC:'Respirační acidóza',RAL:'Respirační alkalóza',
+    MIXAC:'Kombinovaná metabolická a respirační acidóza',MIXAL:'Kombinovaná metabolická a respirační alkalóza',
+    NORM:'Bez poruchy podle pH, pCO₂ a HCO₃⁻',UNCLEAR:'Porucha nejde z hodnot určit'};
+  r.steps.push({t:'2. Primární porucha', pill:prim==='NORM'?'Norma':prim==='UNCLEAR'?'Nejasné':'Určena', lvl:prim==='NORM'?'ok':prim==='UNCLEAR'?'warn':'info',
+    html:'<p><b>'+names[prim]+'.</b> HCO₃⁻ <span class="num">'+f(hco3,1)+'</span> mmol/l'+(i.hco3==null?' (dopočítaný)':'')+', pCO₂ <span class="num">'+fp(i.pco2)+'</span>'+(i.venous?' (odhad arteriálního <span class="num">'+fp(pa)+'</span>)':'')+'.</p>'
+      +(prim==='UNCLEAR'?'<p>pH je mimo normu, ale HCO₃⁻ ani pCO₂ směr nevysvětlují. Zkontroluj zadané hodnoty a jednotky.</p>':'')});
+
+  // 3) kompenzace
+  let comp=null, extra=null, compLvl='ok', compPill='Přiměřená';
+  if(prim==='MAC'||prim==='MAL'){
+    const exp = prim==='MAC' ? 1.5*hco3+8 : 40+0.7*(hco3-24);
+    const tol = prim==='MAC' ? 2 : 5;
+    const lo=(exp-tol)/K, hi=(exp+tol)/K;
+    let txt;
+    if(pam>exp+tol){ extra='RAC'; txt='pCO₂ je vyšší než očekávané. Současně probíhá <b>respirační acidóza</b> (nedostatečná ventilace).'; }
+    else if(pam<exp-tol){ extra='RAL'; txt='pCO₂ je nižší než očekávané. Současně probíhá <b>respirační alkalóza</b> (hyperventilace nad rámec kompenzace).'; }
+    else txt='pCO₂ odpovídá očekávané respirační kompenzaci.';
+    comp={axis:'pco2', bands:[{lo,hi,label:'očekávané '+fp(lo,true)+'–'+fp(hi)}], val:pa, valLabel:fp(pa),
+      html:'<p>'+(prim==='MAC'?'Winterův vzorec: pCO₂ = 1,5 × HCO₃⁻ + 8 ± 2 mmHg':'Očekávané pCO₂ = 40 + 0,7 × (HCO₃⁻ − 24) ± 5 mmHg')+'. '+txt+'</p>'
+        +(prim==='MAL'&&exp>55?'<p>Respirační kompenzace alkalózy obvykle nepřesáhne pCO₂ kolem 7,3 kPa (55 mmHg).</p>':'')};
+  } else if(prim==='RAC'||prim==='RAL'){
+    const d = pam-40;
+    const ac = prim==='RAC' ? 24+0.1*d : 24+0.2*d;
+    const ch = prim==='RAC' ? 24+0.35*d : 24+0.4*d;
+    const tol=2, lowB=Math.min(ac,ch), highB=Math.max(ac,ch);
+    let txt;
+    const inAc=Math.abs(hco3-ac)<=tol, inCh=Math.abs(hco3-ch)<=tol;
+    if(hco3<lowB-tol){ extra='MAC'; txt='HCO₃⁻ je nižší, než odpovídá i '+(prim==='RAC'?'akutní':'chronické')+' kompenzaci. Současně probíhá <b>metabolická acidóza</b>.'; }
+    else if(hco3>highB+tol){ extra='MAL'; txt='HCO₃⁻ je vyšší, než odpovídá i '+(prim==='RAC'?'chronické':'akutní')+' kompenzaci. Současně probíhá <b>metabolická alkalóza</b>.'; }
+    else if(inAc&&inCh) txt='HCO₃⁻ odpovídá kompenzaci; akutní a chronickou formu při této odchylce pCO₂ nejde odlišit.';
+    else if(inAc){ txt='HCO₃⁻ odpovídá <b>akutní</b> poruše (ledvinná kompenzace se ještě nerozvinula).'; r.sub.push('Akutní respirační porucha'); }
+    else if(inCh){ txt='HCO₃⁻ odpovídá <b>chronické</b> poruše s rozvinutou ledvinnou kompenzací.'; r.sub.push('Chronická, metabolicky kompenzovaná respirační porucha'); }
+    else { txt='HCO₃⁻ leží mezi akutní a chronickou kompenzací: porucha trvá 2–5 dní, nebo jde o akutní zhoršení chronické poruchy.'; compPill='Přechodná'; compLvl='info'; }
+    comp={axis:'hco3', bands:[{lo:ac-tol,hi:ac+tol,label:'akutní '+f(ac,1)},{lo:ch-tol,hi:ch+tol,label:'chronická '+f(ch,1)}], val:hco3, valLabel:f(hco3,1),
+      html:'<p>Očekávaný HCO₃⁻: akutně '+(prim==='RAC'?'+1 mmol/l':'−2 mmol/l')+' a chronicky '+(prim==='RAC'?'+3,5 mmol/l':'−4 mmol/l')+' na každých 10 mmHg (1,33 kPa) změny pCO₂, tolerance ± 2. '+txt+'</p>'};
+  }
+  if(extra){ compLvl='warn'; compPill='Smíšená porucha'; lvl('warn'); }
+  if(comp) r.steps.push({t:'3. Kompenzace', pill:compPill, lvl:compLvl, html:comp.html, track:comp});
+  else if(prim==='MIXAC'||prim==='MIXAL') r.steps.push({t:'3. Kompenzace', pill:'Chybí', lvl:'crit',
+    html:'<p>HCO₃⁻ i pCO₂ posouvají pH stejným směrem. Žádný systém nekompenzuje, jde o dvě souběžné poruchy.</p>'});
+  if(prim==='MIXAC'||prim==='MIXAL') lvl('crit');
+  r.extra=extra;
+
+  // 4) aniontová mezera
+  const hasMAC = prim==='MAC'||prim==='MIXAC'||extra==='MAC';
+  let agc=null, agHigh=null;
+  if(i.na!=null&&i.cl!=null){
+    const ag=i.na-i.cl-hco3;
+    agc = i.alb!=null ? ag+0.25*(40-i.alb) : ag;
+    agHigh = agc>12;
+    r.ag=ag; r.agc=agc;
+    let h='<p>AG = Na − Cl − HCO₃⁻ = <span class="num">'+f(ag,1)+'</span> mmol/l'
+      +(i.alb!=null?', po korekci na albumin <span class="num">'+f(agc,1)+'</span> mmol/l':' (bez korekce na albumin; při hypoalbuminémii je skutečná AG vyšší)')+'.</p>';
+    if(agHigh&&!hasMAC){ h+='<p>AG je zvýšená, i když HCO₃⁻ acidózu neukazuje. Počítej se <b>skrytou metabolickou acidózou s vysokou AG</b>, kterou maskuje jiná porucha.</p>'; r.sub.push('Zvýšená AG bez zjevné acidózy: skrytá metabolická acidóza'); lvl('warn'); }
+    if(hasMAC) h+= agHigh ? '<p>Acidóza s <b>vysokou AG</b>: laktát, ketolátky, urémie, intoxikace (metanol, etylenglykol, salicyláty).</p>'
+                          : '<p>Acidóza s <b>normální AG</b> (hyperchloremická): ztráty bikarbonátu průjmem, renální tubulární acidóza, nálož chloridů z infuzí, časná renální insuficience.</p>';
+    // delta poměr
+    if(agHigh && hco3<24){
+      const dr=(agc-12)/(24-hco3); r.dr=dr;
+      let d;
+      if(dr<0.4) d='převažuje hyperchloremická složka';
+      else if(dr<0.8) d='kombinace acidózy s vysokou a s normální AG';
+      else if(dr<=2) d='čistá acidóza s vysokou AG';
+      else { d='HCO₃⁻ je vyšší, než odpovídá vzestupu AG: přidružená metabolická alkalóza nebo kompenzace chronické respirační acidózy'; }
+      h+='<p>Delta poměr (ΔAG / ΔHCO₃⁻) = <span class="num">'+f(dr,2)+'</span>: '+d+'.</p>';
+      if(dr<0.8) r.sub.push('Přidružená hyperchloremická složka acidózy (delta poměr '+f(dr,2)+')');
+      if(dr>2) r.sub.push('Přidružená metabolická alkalóza nebo chronická hyperkapnie (delta poměr '+f(dr,2)+')');
+    }
+    if(i.lac!=null && agHigh){
+      const rest=agc-12-i.lac;
+      h+='<p>Laktát <span class="num">'+f(i.lac,1)+'</span> mmol/l vysvětluje '+(rest<=3?'prakticky celý vzestup AG.':'jen část vzestupu AG; zbývá <span class="num">'+f(rest,1)+'</span> mmol/l jiných aniontů (ketolátky, uremické anionty, toxiny).')+'</p>';
+      if(rest>3) r.sub.push('Neměřené anionty mimo laktát: asi '+f(rest,1)+' mmol/l');
+    }
+    r.steps.push({t:'4. Aniontová mezera', pill:agHigh?'Zvýšená':'V normě', lvl:agHigh?'warn':'ok', html:h});
+  } else r.steps.push({t:'4. Aniontová mezera', pill:'Chybí data', lvl:'info', html:'<p class="empty">Doplň Na⁺ a Cl⁻. Albumin zpřesní výsledek u hypoalbuminémie.</p>'});
+
+  // laktát samostatně
+  if(i.lac!=null && i.lac>2){ r.sub.push('Hyperlaktatémie '+f(i.lac,1)+' mmol/l'); lvl(i.lac>=4?'crit':'warn'); }
+
+  // 5) rozklad BE
+  if(i.na!=null&&i.cl!=null){
+    const eNa=i.na-i.cl-38, eAlb=i.alb!=null?0.25*(42-i.alb):null, eLac=i.lac!=null?-i.lac:null;
+    const other=sbe-eNa-(eAlb??0)-(eLac??0);
+    let h='<p>Zjednodušený Stewartův přístup podle Storyho: jak jednotlivé složky přispívají k BE.</p><div class="kv">'
+      +'<span>Na − Cl − 38 (chloridy, voda)</span><span>'+sg(eNa)+'</span>'
+      +(eAlb!=null?'<span>Albumin: 0,25 × (42 − alb)</span><span>'+sg(eAlb)+'</span>':'')
+      +(eLac!=null?'<span>Laktát</span><span>'+sg(eLac)+'</span>':'')
+      +'<span>Ostatní neměřené ionty'+(eLac==null?' (včetně laktátu)':'')+'</span><span>'+sg(other)+'</span>'
+      +'<span class="tot">BE'+(i.be==null?' (dopočítaný)':'')+'</span><span class="tot">'+sg(sbe)+'</span></div>';
+    if(eAlb==null) h+='<p class="empty">Bez albuminu je jeho alkalizující vliv schovaný v položce ostatních iontů.</p>';
+    r.steps.push({t:'5. Rozklad BE', pill:'BE '+sg(sbe), lvl:Math.abs(sbe)>10?'crit':Math.abs(sbe)>3?'warn':'ok', html:h});
+  }
+
+  // doporučené další kroky
+  const add=k=>x=>{ if(!r[k].includes(x)) r[k].push(x); };
+  const U=add('urgent'), W=add('work'), T=add('treat');
+  const dis=({MIXAC:['MAC','RAC'],MIXAL:['MAL','RAL']}[prim]||[prim]).concat(extra?[extra]:[]);
+  const has=c=>dis.includes(c);
+  if(pHa<7.20||pHa>7.55) U('Těžká porucha pH: monitorované lůžko, kontrola ABR za 1–2 hodiny');
+  if(i.lac!=null&&i.lac>=4) U('Laktát 4 mmol/l a více: postupovat jako u šoku, dokud se neprokáže jiná příčina');
+  if(prim==='MIXAC') U('Selhává ventilace i metabolická rovnováha: zajistit dýchání (NIV nebo intubace) a oběh, JIP');
+  if(prim==='MAC'&&extra==='RAC') U('Ventilace nestačí acidózu kompenzovat: hrozí vyčerpání, zvážit ventilační podporu');
+  if(has('RAC')&&pHa<7.25) U('Respirační acidóza s pH pod 7,25: NIV, při poruše vědomí nebo selhání NIV intubace');
+  if(i.venous&&(has('RAC')||has('RAL'))) W('Odebrat arteriální ABR: z venózního vzorku nejde ventilaci spolehlivě posoudit');
+  if(has('MAC')||(agHigh&&!hasMAC)){
+    if(agHigh==null) W('Doplnit Na⁺, Cl⁻ a albumin k výpočtu aniontové mezery');
+    if(agHigh!==false){
+      if(i.lac==null) W('Laktát');
+      W('Glykémie a ketolátky (β-hydroxybutyrát nebo ketony v moči)');
+      W('Urea, kreatinin, diuréza');
+      W('Při nejasné příčině osmolalita séra a osmolální gap, toxikologie (metanol, etylenglykol, salicyláty), léky (metformin)');
+      T('Léčit příčinu: u ketoacidózy tekutiny, inzulin a kalium; u urémie nebo intoxikace zvážit dialýzu');
+      T('Bikarbonát i.v. jen při pH pod 7,1, při akutním poškození ledvin pod 7,2; u laktátové acidózy a ketoacidózy jinak nepomáhá');
+    }
+    if(agHigh===false || (r.dr!=null&&r.dr<0.8)){
+      W('Anamnéza: průjem, drenáže a píštěle, infuze 0,9% NaCl, acetazolamid');
+      W('Kalium a renální funkce');
+      W('Močová aniontová mezera (Na + K − Cl v moči) a pH moči k odlišení renální tubulární acidózy');
+      T('Ztráty hradit balancovaným roztokem, ne 0,9% NaCl');
+      T('Korekce kalia; bikarbonát p.o. nebo i.v. při HCO₃⁻ pod 15 mmol/l nebo trvajících ztrátách');
+    }
+  }
+  if(i.lac!=null&&i.lac>2){
+    W('Příčina hyperlaktatémie: hypoperfuze a sepse (hemokultury, zdroj), hypoxémie, ischemie střeva nebo končetiny, křeče, metformin, jaterní selhání, deficit thiaminu');
+    W('Kontrola laktátu za 2 hodiny');
+    T('Obnovit perfuzi: tekutiny, při hypotenzi vazopresory; u sepse antibiotika do 1 hodiny');
+  }
+  if(has('MAL')||(r.dr!=null&&r.dr>2)){
+    W('Chloridy v moči: pod 20 mmol/l zvracení, odsávání žaludku, dřívější diuretika, hypovolémie; nad 20 mmol/l probíhající diuretika, hyperaldosteronismus, těžká hypokalémie');
+    W('Kalium, magnezium, krevní tlak, hydratace, léky (diuretika, alkalizující látky)');
+    T('Chlorid-responzivní forma: 0,9% NaCl s KCl');
+    T('Korekce kalia a magnezia, bez ní alkalóza přetrvá');
+    T('Snížit nebo vysadit kličková a thiazidová diuretika; při zvracení antiemetika a PPI');
+    T('Při převodnění acetazolamid místo NaCl; při hyperaldosteronismu spironolakton');
+  }
+  if(has('RAC')){
+    W('Vědomí, dechová frekvence, SpO₂, RTG hrudníku');
+    W('Příčina hypoventilace: CHOPN nebo astma, útlum opioidy či benzodiazepiny, nervosvalové onemocnění, obezita, únava dechových svalů');
+    T('Bronchodilatace, uvolnění dýchacích cest; při lékovém útlumu naloxon nebo flumazenil');
+    T('Kyslík titrovat na SpO₂ 88–92 %');
+    T('NIV při pH pod 7,35 a pCO₂ nad 6 kPa přes standardní léčbu');
+    T('Bikarbonát nepodávat; chronickou hyperkapnii nesnižovat rychle (posthyperkapnická alkalóza)');
+  }
+  if(has('RAL')){
+    W('SpO₂ a arteriální pO₂, RTG hrudníku; při podezření na plicní embolii klinické skóre, D-dimery nebo CT angiografie');
+    W('Zvážit sepsi, bolest, jaterní selhání, salicyláty, postižení CNS, těhotenství');
+    W('iCa, kalium a fosfát: alkalóza je snižuje');
+    T('Léčit příčinu; kyslík při hypoxémii');
+    T('Úzkostná hyperventilace až po vyloučení organické příčiny: zklidnění, vedené dýchání');
+  }
+
+  // oxygenace
+  if(i.po2!=null||i.so2!=null){
+    let h='', l='ok', pill='V normě';
+    const N=(x)=>'<span class="num">'+x+'</span>';
+    if(!i.venous){
+      const hyp=(i.po2!=null&&i.po2<8)||(i.po2==null&&i.so2<90);
+      const mild=!hyp&&((i.po2!=null&&i.po2<10)||(i.so2!=null&&i.so2<94));
+      h+='<p>'+(i.po2!=null?'paO₂ '+N(fp(i.po2)):'')+(i.po2!=null&&i.so2!=null?', ':'')+(i.so2!=null?'SaO₂ '+N(f(i.so2,1))+' %':'')+'.</p>';
+      if(hyp){
+        const t2=pa>6.0; l='crit'; pill='Respirační insuficience'; lvl('crit');
+        const nm=t2?'Hyperkapnická (globální, typ II) respirační insuficience':'Hypoxemická (parciální, typ I) respirační insuficience';
+        h+='<p><b>'+nm+'.</b></p>'; r.sub.push(nm);
+        U(t2?'Hypoxémie s hyperkapnií: kyslík řízeně na SpO₂ 88–92 %, zvážit NIV':'Hypoxémie: kyslík s cílem SpO₂ 94–98 %, při selhání HFNO nebo NIV');
+        W('Příčina hypoxémie: RTG hrudníku, poslech; zvážit pneumonii, plicní edém, plicní embolii');
+      } else if(mild){ l='warn'; pill='Lehká hypoxémie'; lvl('warn'); r.sub.push('Lehká hypoxémie'); W('Sledovat SpO₂, RTG hrudníku podle klinického nálezu'); }
+      if(i.po2!=null){
+        const fio=(i.fio2??21)/100, aa=fio*95-pa/0.8-i.po2, pf=i.po2*K/fio;
+        h+='<p>Alveolo-arteriální gradient '+N(fp(aa))+' při FiO₂ '+f(fio*100,0)+' %'+(i.fio2==null?' (předpokládán vzduch)':'')+', poměr paO₂/FiO₂ '+N(f(pf,0))+' mmHg.</p>';
+        if(fio<=0.22){
+          if(aa>3) h+='<p>Gradient je zvýšený (nad 3 kPa): porucha je v plicích (nepoměr ventilace a perfuze, zkrat, porucha difuze).</p>';
+          else if(hyp||has('RAC')) h+='<p>Gradient je normální: nález odpovídá prosté hypoventilaci bez významné poruchy výměny plynů v plicích.</p>';
+        } else h+='<p class="empty">Při podávání kyslíku je gradient jen orientační. Řiď se poměrem paO₂/FiO₂: pod 300 lehká, pod 200 střední, pod 100 těžká porucha oxygenace.</p>';
+        if(fio>0.22&&pf<300){
+          const sev=pf<100?'Těžká':pf<200?'Středně těžká':'Lehká';
+          pill=sev+' porucha oxygenace'; l=pf<200?'crit':'warn'; lvl(l);
+          r.sub=r.sub.filter(x=>x!=='Lehká hypoxémie'); r.sub.push(pill+' (paO₂/FiO₂ '+f(pf,0)+' mmHg)');
+          W('Příčina hypoxémie: RTG hrudníku, poslech; zvážit pneumonii, plicní edém, plicní embolii');
+          if(pf<200) U('paO₂/FiO₂ pod 200 mmHg: zvážit HFNO, NIV nebo intubaci, JIP');
+        }
+      }
+    } else {
+      l='info'; pill='Jen orientačně';
+      h+='<p>Z venózního vzorku nejde oxygenaci plic hodnotit'+(i.so2!=null?'. Saturace žilní krve '+N(f(i.so2,1))+' %':'')+'.</p>';
+      if(i.so2!=null&&i.so2<65){
+        l='warn'; pill='Nízká žilní saturace'; lvl('warn');
+        h+='<p>U centrální žilní krve znamená hodnota pod 65–70 % zvýšenou extrakci kyslíku: nízký srdeční výdej, anémie, hypoxémie nebo zvýšená spotřeba. U periferní žíly hodnota vypovídá jen o dané končetině.</p>';
+        r.sub.push('Nízká žilní saturace '+f(i.so2,1)+' % (hodnotitelné u centrální žíly)');
+        W('Při nízké žilní saturaci: SpO₂, hemoglobin, krevní tlak a známky hypoperfuze, případně echokardiografie');
+      } else if(i.so2!=null&&i.so2>80&&i.lac!=null&&i.lac>2)
+        h+='<p>Vysoká žilní saturace při hyperlaktatémii svědčí pro poruchu extrakce kyslíku (sepse, zkrat).</p>';
+    }
+    r.steps.push({t:'Oxygenace', pill, lvl:l, html:h});
+  }
+  // glykémie a kalium
+  if(i.glu!=null){
+    if(i.glu<3.9){ r.sub.push('Hypoglykémie '+f(i.glu,1)+' mmol/l'); U('Hypoglykémie: glukóza i.v. nebo p.o., kontrola za 15 minut'); lvl('crit'); }
+    else if(i.glu>=11&&has('MAC')&&agHigh!==false){
+      const likely=agHigh===true&&(i.lac==null||agc-12-i.lac>3);
+      r.sub.push('Hyperglykémie '+f(i.glu,1)+' mmol/l s acidózou: '+(likely?'pravděpodobná diabetická ketoacidóza':'vyloučit ketoacidózu (ketolátky)')); lvl('warn');
+      T('Při potvrzené ketoacidóze: krystaloidy, inzulin kontinuálně 0,1 j/kg/h, kalium podle hladiny, glykémie po hodině');
+    } else if(i.glu>=11){ r.sub.push('Hyperglykémie '+f(i.glu,1)+' mmol/l'); if(i.glu>=30) W('Osmolalita séra: při glykémii nad 30 mmol/l myslet na hyperosmolární stav'); }
+  }
+  if(i.k!=null){
+    if(i.k<3.5){
+      r.sub.push('Hypokalémie '+f(i.k,1)+' mmol/l'); lvl('warn'); W('Magnezium');
+      T('Doplnit kalium před podáním bikarbonátu a inzulinu (při K⁺ pod 3,3 mmol/l inzulin odložit)');
+      if(i.k<2.5){ U('Kalium pod 2,5 mmol/l: monitor EKG, substituce i.v.'); lvl('crit'); }
+    } else if(i.k>5.5){
+      r.sub.push('Hyperkalémie '+f(i.k,1)+' mmol/l'); lvl('warn'); W('EKG');
+      T('Hyperkalémie: při změnách na EKG kalcium i.v., inzulin s glukózou, salbutamol; dále odstranění kalia (diuretikum, iontoměnič, dialýza)');
+      if(i.k>=6.5){ U('Kalium 6,5 mmol/l a více: EKG a léčba ihned'); lvl('crit'); }
+    } else if(has('MAC')&&agHigh!==false&&i.glu!=null&&i.glu>=11) T('Kalium je v normě jen zdánlivě: po inzulinu a korekci acidózy klesne, substituovat včas');
+  }
+
+  // závěr
+  let main = names[prim];
+  if((prim==='MAC'||prim==='MIXAC') && agHigh!=null) main += agHigh?' s vysokou aniontovou mezerou':' s normální aniontovou mezerou';
+  r.dx.push(main);
+  if(prim==='MAC'||prim==='MAL') r.dx.push(extra? 'Přidružená '+names[extra].toLowerCase() : 'Respirační kompenzace přiměřená');
+  else if((prim==='RAC'||prim==='RAL') && extra) r.dx.push('Přidružená '+names[extra].toLowerCase());
+  if(prim!=='NORM') lvl('warn');
+  return r;
+}
+
+// ---------- formát ----------
+let unit='kpa';
+function f(x,d){ return x.toFixed(d).replace('.',',').replace('-','−'); }
+function sg(x){ if(Math.abs(x)<0.05) x=0; const s=f(x,1); return (x>0?'+':'')+s; }
+function fp(kpa,bare){ return unit==='kpa' ? f(kpa,2)+(bare?'':' kPa') : f(kpa*K,0)+(bare?'':' mmHg'); }
+
+// ---------- DOM ----------
+if(typeof document!=='undefined'){
+  const $=id=>document.getElementById(id);
+  const ids=['ph','pco2','po2','so2','fio2','hco3','be','na','cl','k','alb','lac','glu'];
+  const lim={ph:[6.5,8],pco2:[0.5,150],hco3:[1,70],be:[-40,40],na:[90,190],cl:[50,150],alb:[5,70],lac:[0,40],po2:[1,700],so2:[10,100],fio2:[21,100],k:[1,10],glu:[0.5,100]};
+  let venous=false, lastText='';
+
+  function read(id){
+    const el=$(id), v=el.value.trim().replace(',','.').replace('−','-');
+    if(v===''){ el.classList.remove('bad'); return null; }
+    const n=Number(v), ok=isFinite(n)&&n>=lim[id][0]&&n<=lim[id][1];
+    el.classList.toggle('bad',!ok);
+    return ok?n:undefined;
+  }
+  function track(c){
+    const vals=[c.val]; c.bands.forEach(b=>vals.push(b.lo,b.hi));
+    let lo=Math.min(...vals), hi=Math.max(...vals); const pad=(hi-lo)*0.25||1; lo-=pad; hi+=pad;
+    const x=v=>((v-lo)/(hi-lo)*100).toFixed(1);
+    return '<div class="track" role="img" aria-label="Porovnání naměřené a očekávané hodnoty">'
+      +c.bands.map(b=>'<div class="band" style="left:'+x(b.lo)+'%;width:'+(x(b.hi)-x(b.lo)).toFixed(1)+'%"><i>'+b.label+'</i></div>').join('')
+      +'<div class="mark" style="left:calc('+x(c.val)+'% - 1px)"><i>naměřeno '+c.valLabel+'</i></div></div>';
+  }
+  function render(){
+    const v={}; let bad=false;
+    ids.forEach(id=>{ v[id]=read(id); if(v[id]===undefined) bad=true; });
+    const out=$('out');
+    if(bad){ out.innerHTML='<div class="card verdict warn"><h2>Závěr</h2><p>Některá hodnota je mimo možný rozsah (červeně označené pole). Zkontroluj zadání a jednotky.</p></div>'; lastText=''; return; }
+    if(v.ph==null||v.pco2==null){ out.innerHTML='<div class="card verdict"><h2>Závěr</h2><p class="empty">Zadej alespoň pH a pCO₂. HCO₃⁻ a BE se dopočítají.</p></div>'; lastText=''; return; }
+    const r=analyze({pH:v.ph, pco2:unit==='kpa'?v.pco2:v.pco2/K, hco3:v.hco3, be:v.be, na:v.na, cl:v.cl, alb:v.alb, lac:v.lac, po2:v.po2==null?null:(unit==='kpa'?v.po2:v.po2/K), so2:v.so2, fio2:v.fio2, k:v.k, glu:v.glu, venous});
+    let h='<div class="card verdict '+r.level+'"><h2>Závěr</h2><ul>'
+      +r.dx.map(d=>'<li>'+d+'</li>').join('')+r.sub.map(d=>'<li class="sub">'+d+'</li>').join('')+'</ul>'
+      +(venous?'<p class="note">Venózní vzorek: kompenzace je hodnocena z odhadu arteriálních hodnot, ber ji orientačně.</p>':'')+'</div>';
+    const li=a=>a.map(x=>'<li>'+x+'</li>').join('');
+    if(r.urgent.length||r.work.length||r.treat.length) h+='<div class="card next"><h2>Doporučené další kroky</h2>'
+      +(r.urgent.length?'<div class="urgent"><h3>Hned</h3><ul>'+li(r.urgent)+'</ul></div>':'')
+      +'<div class="cols">'+(r.work.length?'<div><h3>Dovyšetřit</h3><ul>'+li(r.work)+'</ul></div>':'')
+      +(r.treat.length?'<div><h3>Léčba</h3><ul>'+li(r.treat)+'</ul></div>':'')+'</div></div>';
+    r.steps.forEach((s,n)=>{ h+='<div class="card step"><h3>'+(n+1)+'. '+s.t.replace(/^\d+\.\s*/,'')+'</h3><span class="pill '+s.lvl+'">'+s.pill+'</span><div class="body">'+s.html+(s.track?track(s.track):'')+'</div></div>'; });
+    out.innerHTML=h;
+    const strip=s=>s.replace(/<[^>]+>/g,'');
+    lastText='ABR ('+(venous?'venózní':'arteriální')+'): pH '+f(v.ph,3)+', pCO2 '+fp(unit==='kpa'?v.pco2:v.pco2/K)+', HCO3 '+f(r.hco3,1)+' mmol/l'+(r.hco3Entered?'':' (dopočítaný)')+', BE '+sg(r.sbe)+' mmol/l'+(r.beEntered?'':' (dopočítaný)')
+      +(v.po2!=null?', pO2 '+fp(unit==='kpa'?v.po2:v.po2/K):'')+(v.so2!=null?', SO2 '+f(v.so2,1)+' %':'')+(v.lac!=null?', laktát '+f(v.lac,1)+' mmol/l':'')+(v.glu!=null?', glukóza '+f(v.glu,1)+' mmol/l':'')+(v.k!=null?', K '+f(v.k,1)+' mmol/l':'')
+      +(r.agc!=null?', AG '+f(r.agc,1)+' mmol/l'+(v.alb!=null?' (korig. na albumin)':''):'')
+      +(r.dr!=null?', delta poměr '+f(r.dr,2):'')
+      +'.\nZávěr: '+r.dx.concat(r.sub).map(strip).join('; ')+'.';
+  }
+  function setSeg(a,b,on){ $(a).setAttribute('aria-pressed',on); $(b).setAttribute('aria-pressed',!on); }
+  $('s-art').onclick=()=>{ venous=false; setSeg('s-art','s-ven',true); render(); };
+  $('s-ven').onclick=()=>{ venous=true; setSeg('s-ven','s-art',true); render(); };
+  function setUnit(u){
+    if(u===unit) return;
+    ['pco2','po2'].forEach(id=>{ const el=$(id), n=Number(el.value.trim().replace(',','.'));
+      if(el.value.trim()!==''&&isFinite(n)) el.value = u==='mm' ? f(n*K,1) : f(n/K,2);
+      $(id+'u').textContent=u==='kpa'?'(kPa)':'(mmHg)'; });
+    unit=u;
+    setSeg('u-kpa','u-mm',u==='kpa'); render();
+  }
+  $('u-kpa').onclick=()=>setUnit('kpa'); $('u-mm').onclick=()=>setUnit('mm');
+  ids.forEach(id=>$(id).addEventListener('input',()=>{ $('copied').textContent=''; render(); }));
+  $('form').addEventListener('submit',e=>e.preventDefault());
+  $('clear').onclick=()=>{ ids.forEach(id=>$(id).value=''); $('copied').textContent=''; render(); };
+  function demo(){
+    setUnit('kpa'); venous=false; setSeg('s-art','s-ven',true);
+    const d={ph:'7,18',pco2:'2,80',po2:'13,5',so2:'98',fio2:'',hco3:'',be:'',na:'134',cl:'98',k:'5,1',alb:'38',lac:'2,4',glu:'28'};
+    ids.forEach(id=>$(id).value=d[id]); render();
+    $('copied').textContent='Načten ukázkový příklad (diabetická ketoacidóza).';
+  }
+  $('demo').onclick=demo;
+  $('copy').onclick=()=>{
+    const m=$('copied');
+    if(!lastText){ m.textContent='Není co kopírovat, nejdřív zadej pH a pCO₂.'; return; }
+    navigator.clipboard.writeText(lastText).then(()=>{ m.textContent='Závěr je ve schránce.'; },()=>{ m.textContent='Kopírování se nepodařilo. Text závěru: '+lastText; });
+  };
+  demo();
+}
+if(typeof module!=='undefined') module.exports={analyze};
+</script>
+</body>
+</html>

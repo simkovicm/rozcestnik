@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dávkování faktoru u hemofilie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: vlevo vstupy, vpravo závěr a kroky hodnocení; na telefonu pod sebou. */
+:root{
+  --bg:#f3f5f9; --surface:#ffffff; --ink:#15233d; --muted:#5a6a85; --line:#d8deea;
+  --accent:#1d3f7a; --accent-soft:#e6ecf7;
+  --ok:#1c7a4c; --ok-soft:#e3f3ea; --warn:#9a5b00; --warn-soft:#fbefd9; --crit:#b3261e; --crit-soft:#fbe6e4;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1624; --surface:#182132; --ink:#e6ebf5; --muted:#98a6bf; --line:#2c3850;
+    --accent:#8fb0ea; --accent-soft:#22304a;
+    --ok:#63c994; --ok-soft:#173327; --warn:#e7b25a; --warn-soft:#3a2d14; --crit:#f28b82; --crit-soft:#3d1d1b;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1624; --surface:#182132; --ink:#e6ebf5; --muted:#98a6bf; --line:#2c3850;
+  --accent:#8fb0ea; --accent-soft:#22304a;
+  --ok:#63c994; --ok-soft:#173327; --warn:#e7b25a; --warn-soft:#3a2d14; --crit:#f28b82; --crit-soft:#3d1d1b;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45}
+.wrap{max-width:1120px;margin:0 auto;padding:20px 16px 40px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin-bottom:16px}
+h1{font-size:22px;font-weight:600;margin:0;text-wrap:balance}
+header p{margin:0;color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:minmax(280px,360px) 1fr;gap:16px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.card h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:0 0 10px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:3px}
+.field.full{grid-column:1/-1}
+label{font-size:13px;color:var(--muted)}
+label b{color:var(--ink);font-weight:500}
+input[type=text],select{font:inherit;font-family:var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:7px 9px;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input.bad{border-color:var(--crit)}
+.group + .group{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{flex:1;font:inherit;font-size:13px;padding:7px 6px;border:0;background:var(--bg);color:var(--muted);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--surface);font-weight:500}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.btn{font:inherit;font-size:13px;padding:7px 12px;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.out{display:flex;flex-direction:column;gap:12px}
+.verdict{border-left:5px solid var(--accent)}
+.verdict.crit{border-left-color:var(--crit)} .verdict.warn{border-left-color:var(--warn)} .verdict.ok{border-left-color:var(--ok)}
+.verdict ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+.verdict li{font-size:17px;font-weight:600;text-wrap:balance}
+.verdict li.sub{font-size:15px;font-weight:400}
+.note{color:var(--muted);font-size:13px;margin:8px 0 0}
+.step{display:grid;grid-template-columns:1fr auto;gap:4px 12px}
+.step h3{font-size:15px;font-weight:600;margin:0}
+.step .body{grid-column:1/-1;font-size:14px}
+.step .body p{margin:6px 0 0}
+.pill{font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;white-space:nowrap;align-self:start}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.crit{background:var(--crit-soft);color:var(--crit)} .pill.info{background:var(--accent-soft);color:var(--accent)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.kv{display:grid;grid-template-columns:1fr auto;gap:2px 16px;margin-top:8px;max-width:440px}
+.kv span:nth-child(even){font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.kv .tot{border-top:1px solid var(--line);padding-top:3px;font-weight:600}
+.track{position:relative;height:26px;margin:22px 0 20px;background:var(--bg);border:1px solid var(--line);border-radius:6px}
+.band{position:absolute;top:0;bottom:0;background:var(--ok-soft);border-left:2px solid var(--ok);border-right:2px solid var(--ok)}
+.band i{position:absolute;top:-19px;left:50%;transform:translateX(-50%);font-style:normal;font-size:11px;color:var(--ok);white-space:nowrap}
+.mark{position:absolute;top:-4px;bottom:-4px;width:3px;background:var(--ink);border-radius:2px}
+.mark i{position:absolute;bottom:-19px;left:50%;transform:translateX(-50%);font-style:normal;font-size:11px;white-space:nowrap;font-family:var(--mono)}
+.empty{color:var(--muted)}
+.next h3{font-size:14px;font-weight:600;margin:0 0 5px}
+.next ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.urgent{background:var(--crit-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+.urgent h3{color:var(--crit)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+footer{margin-top:18px;color:var(--muted);font-size:12.5px;max-width:75ch}
+.big{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:30px;font-weight:500;line-height:1.15}
+.big small{font-size:15px;color:var(--muted);font-family:var(--sans);font-weight:400}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:460px}
+th{text-align:left;font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.04em;text-transform:uppercase;padding:4px 10px 6px 0;border-bottom:1px solid var(--line)}
+td{padding:7px 10px 7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Dávkování faktoru u hemofilie</h1>
+  <p>Akutní krvácení u hemofilie A a B: cílová hladina, dávka, interval, další kroky</p>
+</header>
+
+<div class="grid">
+<form class="card" id="form" autocomplete="off">
+  <div class="group">
+    <h2>Pacient</h2>
+    <div class="fields">
+      <div class="field full">
+        <label>Typ hemofilie</label>
+        <div class="seg" role="group" aria-label="Typ hemofilie">
+          <button type="button" id="t-a" aria-pressed="true">A (FVIII)</button>
+          <button type="button" id="t-b" aria-pressed="false">B (FIX)</button>
+        </div>
+      </div>
+      <div class="field"><label for="w"><b>Hmotnost</b> (kg)</label><input type="text" inputmode="decimal" id="w"></div>
+      <div class="field"><label for="base"><b>Výchozí hladina</b> (%)</label><input type="text" inputmode="decimal" id="base" placeholder="0 u těžké formy"></div>
+      <div class="field full">
+        <label>Inhibitor</label>
+        <div class="seg" role="group" aria-label="Inhibitor">
+          <button type="button" id="i-no" aria-pressed="true">Ne</button>
+          <button type="button" id="i-yes" aria-pressed="false">Ano</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="group">
+    <h2>Krvácení a přípravek</h2>
+    <div class="fields">
+      <div class="field full"><label for="bleed"><b>Lokalizace krvácení</b></label><select id="bleed"></select></div>
+      <div class="field full"><label for="prod"><b>Přípravek</b> <span id="prodkind">(rekombinantní FVIII)</span></label><select id="prod"></select></div>
+      <div class="field"><label for="target"><b>Cílový vrchol</b> (%)</label><input type="text" inputmode="decimal" id="target"></div>
+      <div class="field"><label for="rec"><b>Výtěžnost</b> (% na IU/kg)</label><input type="text" inputmode="decimal" id="rec"></div>
+      <div class="field full"><label for="vial"><b>Zaokrouhlit nahoru na</b></label>
+        <select id="vial"><option value="250">250 IU</option><option value="500">500 IU</option><option value="0">nezaokrouhlovat</option></select></div>
+    </div>
+  </div>
+  <div class="actions">
+    <button type="button" class="btn primary" id="copy">Kopírovat ordinaci</button>
+    <button type="button" class="btn" id="reset">Výchozí hodnoty</button>
+  </div>
+  <p class="note" id="copied" aria-live="polite"></p>
+</form>
+
+<div class="out" id="out"></div>
+</div>
+
+<footer>
+  Cílové hladiny a trvání léčby podle doporučení Světové hemofilické federace (WFH, 3. vydání 2020, tabulka 7-2, režim s vyššími dávkami). Dávka = hmotnost × (cílová − výchozí hladina) ÷ výtěžnost. Kalkulačka pracuje jen s rekombinantními FVIII a plazmatickými FIX se standardním poločasem; u dětí bývá výtěžnost nižší. Pomůcka k rychlé orientaci, nenahrazuje konzultaci hemofilického centra a úpravu podle změřených hladin.
+</footer>
+</div>
+
+<script>
+const BLEEDS=[
+ {id:'joint',name:'Kloub (hemartros)',A:{i:[40,60],iT:'1–2 dny'},B:{i:[40,60],iT:'1–2 dny'},
+  tips:['Klid, led, komprese a elevace končetiny; krátkodobá imobilizace','Trvání prodloužit při nedostatečné odpovědi','Rehabilitace po odeznění bolesti; punkce kloubu jen výjimečně a pod krytím faktorem']},
+ {id:'muscle',name:'Sval povrchový, bez útlaku nervů a cév',A:{i:[40,60],iT:'2–3 dny'},B:{i:[40,60],iT:'2–3 dny'},
+  tips:['Klid a elevace, sledovat prokrvení a čití končetiny','Při bolesti v klidu, paresteziích nebo napětí myslet na kompartment syndrom']},
+ {id:'ilio',name:'Iliopsoas nebo hluboký sval s útlakem či velkou ztrátou',urgent:true,
+  A:{i:[80,100],iT:'dny 1–2',m:[30,60],mT:'dny 3–5'},B:{i:[60,80],iT:'dny 1–2',m:[30,60],mT:'dny 3–5'},
+  tips:['Hospitalizace, klid na lůžku, UZ nebo CT','Sledovat krevní obraz a funkci n. femoralis','Udržovací fázi lze prodloužit jako sekundární profylaxi po dobu rehabilitace']},
+ {id:'cns',name:'Nitrolební krvácení, úraz hlavy',urgent:true,
+  A:{i:[80,100],iT:'dny 1–7',m:[50,50],mT:'dny 8–21'},B:{i:[60,80],iT:'dny 1–7',m:[30,30],mT:'dny 8–21'},
+  tips:['Faktor podat ihned, ještě před CT','JIP, neurochirurgické konzilium','Po zvládnutí sekundární profylaxe 3–6 měsíců']},
+ {id:'neck',name:'Krk a hrdlo',urgent:true,
+  A:{i:[80,100],iT:'dny 1–7',m:[50,50],mT:'dny 8–14'},B:{i:[60,80],iT:'dny 1–7',m:[30,30],mT:'dny 8–14'},txa:true,
+  tips:['Faktor podat ihned, sledovat průchodnost dýchacích cest','ORL konzilium, při progresi včasné zajištění dýchacích cest']},
+ {id:'gi',name:'Gastrointestinální krvácení',urgent:true,
+  A:{i:[80,100],iT:'dny 1–14',m:[50,50],mT:'do zhojení'},B:{i:[60,80],iT:'dny 1–14',m:[30,30],mT:'do zhojení'},txa:true,
+  tips:['Endoskopie k určení zdroje, krevní obraz, inhibitor protonové pumpy']},
+ {id:'renal',name:'Ledviny, hematurie',A:{i:[50,50],iT:'3–5 dní'},B:{i:[40,40],iT:'3–5 dní'},
+  tips:['Hydratace a klid; faktor při přetrvávající nebo bolestivé hematurii','Kyselinu tranexamovou nepodávat: hrozí obstrukce močových cest koaguly']},
+ {id:'lac',name:'Hluboká tržná rána',A:{i:[50,50],iT:'5–7 dní'},B:{i:[40,40],iT:'5–7 dní'},
+  tips:['Chirurgické ošetření a sutura pod krytím faktorem']}
+];
+const PRODS={
+ A:[{name:'Advate (oktokog alfa)',rec:2.0,int:'po 8–12 hodinách'},
+    {name:'Kovaltry (oktokog alfa)',rec:2.0,int:'po 8–12 hodinách'},
+    {name:'NovoEight (turoktokog alfa)',rec:2.0,int:'po 8–12 hodinách'},
+    {name:'Nuwiq (simoktokog alfa)',rec:2.0,int:'po 8–12 hodinách'},
+    {name:'ReFacto AF (moroktokog alfa)',rec:2.0,int:'po 8–12 hodinách'},
+    {name:'Afstyla (lonoktokog alfa)',rec:2.0,int:'po 8–12 hodinách'}],
+ B:[{name:'Octanine F',rec:1.0,int:'po 18–24 hodinách'},
+    {name:'Immunine',rec:1.0,int:'po 18–24 hodinách'},
+    {name:'Haemonine',rec:1.0,int:'po 18–24 hodinách'},
+    {name:'Mononine',rec:1.0,int:'po 18–24 hodinách'}]
+};
+
+function calc(i){ // i: type, w, base, bleedId, target, rec, vial, inhibitor, prodIdx
+  const b=BLEEDS.find(x=>x.id===i.bleedId), d=b[i.type], p=PRODS[i.type][i.prodIdx];
+  const round=x=>i.vial>0?Math.max(0,Math.ceil(x/i.vial-1e-9))*i.vial:Math.round(x);
+  const dose=t=>i.w*Math.max(0,t-i.base)/i.rec;
+  const r={b,d,p,rise:Math.max(0,i.target-i.base)};
+  r.raw=dose(i.target); r.dose=round(r.raw); r.perKg=r.dose/i.w;
+  r.reached=i.base+r.dose/i.w*i.rec;
+  r.lo=round(dose(d.i[0])); r.hi=round(dose(d.i[1]));
+  r.next=round(r.raw/2);
+  if(d.m){ r.mLo=round(dose(d.m[0])); r.mHi=round(dose(d.m[1])); }
+  if(i.inhibitor){ r.f7=i.w*0.09; r.apccLo=i.w*50; r.apccHi=i.w*100; r.apccMax=i.w*200; }
+  return r;
+}
+
+if(typeof document!=='undefined'){
+  const $=id=>document.getElementById(id);
+  const f=(x,d)=>x.toFixed(d).replace('.',',');
+  const iu=x=>Math.round(x).toString().replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+  const rng=a=>a[0]===a[1]?a[0]+' %':a[0]+'–'+a[1]+' %';
+  const lim={w:[2,250],base:[0,60],target:[5,150],rec:[0.3,3]};
+  let type='A', inhibitor=false, lastText='';
+
+  function read(id){
+    const el=$(id), v=el.value.trim().replace(',','.');
+    if(v===''){ el.classList.remove('bad'); return null; }
+    const n=Number(v), ok=isFinite(n)&&n>=lim[id][0]&&n<=lim[id][1];
+    el.classList.toggle('bad',!ok); return ok?n:undefined;
+  }
+  function fillProds(){ $('prodkind').textContent=type==='A'?'(rekombinantní FVIII)':'(plazmatický FIX)'; $('prod').innerHTML=PRODS[type].map((p,k)=>'<option value="'+k+'">'+p.name+'</option>').join(''); $('rec').value=f(PRODS[type][0].rec,1); }
+  function fillTarget(){ const d=BLEEDS.find(x=>x.id===$('bleed').value)[type]; $('target').value=Math.round((d.i[0]+d.i[1])/2); }
+  function render(){
+    const out=$('out'); lastText='';
+    const w=read('w'), base=read('base')??0, target=read('target'), rec=read('rec');
+    if([w,target,rec].includes(undefined)||read('base')===undefined){ out.innerHTML='<div class="card verdict warn"><h2>Dávka</h2><p>Některá hodnota je mimo možný rozsah (červeně označené pole).</p></div>'; return; }
+    if(w==null||target==null||rec==null){ out.innerHTML='<div class="card verdict"><h2>Dávka</h2><p class="empty">Zadej hmotnost, cílový vrchol a výtěžnost.</p></div>'; return; }
+    const prodIdx=Number($('prod').value), vial=Number($('vial').value);
+    const r=calc({type,w,base,bleedId:$('bleed').value,target,rec,vial,inhibitor,prodIdx});
+    const fac=type==='A'?'FVIII':'FIX', b=r.b, d=r.d;
+    let h='';
+    if(inhibitor){
+      h+='<div class="card verdict crit"><h2>Inhibitor: přemosťující léčba</h2><ul>'
+        +'<li>rFVIIa 90 µg/kg = <span class="num">'+f(r.f7,1)+' mg</span> po 2–3 hodinách</li>'
+        +'<li class="sub">nebo aPCC 50–100 IU/kg = <span class="num">'+iu(r.apccLo)+'–'+iu(r.apccHi)+' IU</span> po 6–12 hodinách, nejvýše <span class="num">'+iu(r.apccMax)+' IU</span> za den</li></ul>'
+        +'<p class="note">Při vysokém titru (5 BU a více) koncentrát faktoru nefunguje. Při nízkém titru lze zkusit vyšší dávky faktoru s kontrolou hladiny.'
+        +' U pacienta na emicizumabu volit rFVIIa a aPCC se vyhnout (riziko trombotické mikroangiopatie).'
+        +(type==='B'?' U hemofilie B s alergickou reakcí na FIX aPCC nepodávat, obsahuje FIX.':'')+'</p></div>';
+    }
+    const out_of=target<d.i[0]||target>d.i[1];
+    h+='<div class="card verdict '+(b.urgent?'crit':'ok')+'"><h2>Úvodní dávka '+fac+(inhibitor?' (jen bez inhibitoru nebo při nízkém titru)':'')+'</h2>'
+      +'<div class="big">'+iu(r.dose)+' IU <small>= '+f(r.perKg,1)+' IU/kg, očekávaný vrchol '+f(r.reached,0)+' %</small></div>'
+      +'<p class="note">'+b.name+': doporučený vrchol '+rng(d.i)+', tomu odpovídá '+(r.lo===r.hi?iu(r.lo):iu(r.lo)+'–'+iu(r.hi))+' IU.'
+      +(out_of?' <b>Zadaný cíl '+f(target,0)+' % je mimo doporučené rozmezí.</b>':'')+'</p>'
+      +(r.rise===0?'<p class="note"><b>Výchozí hladina už cíle dosahuje, dávka není potřeba.</b></p>':'')
+      +(b.urgent?'<p><b>Život nebo končetinu ohrožující krvácení: faktor podat ihned, vyšetření až potom.</b></p>':'')+'</div>';
+
+    h+='<div class="card step"><h3>Schéma léčby</h3><span class="pill info">'+r.p.name+'</span><div class="body"><div class="tw"><table>'
+      +'<tr><th>Fáze</th><th>Vrchol</th><th>Dávka na vrchol</th><th>Trvání</th></tr>'
+      +'<tr><td>'+(d.m?'Úvodní':'Léčba')+'</td><td class="n">'+rng(d.i)+'</td><td class="n">'+(r.lo===r.hi?iu(r.lo):iu(r.lo)+'–'+iu(r.hi))+' IU</td><td>'+d.iT+'</td></tr>'
+      +(d.m?'<tr><td>Udržovací</td><td class="n">'+rng(d.m)+'</td><td class="n">'+(r.mLo===r.mHi?iu(r.mLo):iu(r.mLo)+'–'+iu(r.mHi))+' IU</td><td>'+d.mT+'</td></tr>':'')
+      +'</table></div>'
+      +'<p>Opakování '+r.p.int+'. Další dávky zhruba <span class="num">'+iu(r.next)+' IU</span> (polovina úvodní dávky), protože část faktoru z předchozí dávky v oběhu zůstává. Upravit podle změřené hladiny.</p>'
+      +'<p class="empty">'+(type==='A'?'Všechny nabízené rekombinantní FVIII se dávkují stejně, volba přípravku dávku nemění.':'Plazmatické FIX mají výtěžnost kolem 1 % na IU/kg.')+' Přípravky s prodlouženým poločasem kalkulačka nepokrývá.</p>'
+      +'</div></div>';
+
+    h+='<div class="card step"><h3>Výpočet</h3><span class="pill info">'+f(r.raw,0)+' IU před zaokrouhlením</span><div class="body">'
+      +'<p class="num">'+f(w,0)+' kg × ('+f(target,0)+' − '+f(base,0)+') % ÷ '+f(rec,1)+' = '+f(r.raw,0)+' IU</p></div></div>';
+
+    const tips=b.tips.slice();
+    if(b.txa) tips.push('Kyselina tranexamová 1 g p.o. po 6–8 hodinách nebo 10 mg/kg i.v. po 8 hodinách');
+    if(type==='A'&&base>=5&&!b.urgent&&!inhibitor) tips.push('U lehké hemofilie A se známou odpovědí lze u menšího krvácení použít desmopresin 0,3 µg/kg');
+    const gen=['Podat co nejdříve, ideálně do 2 hodin od začátku obtíží','Hladina faktoru 15–30 minut po podání a před další dávkou','Při slabé odpovědi nebo nízké výtěžnosti vyšetřit inhibitor','Žádné i.m. injekce, kyselina acetylsalicylová ani NSAID; analgezie paracetamolem, případně opioidem','Informovat hemofilické centrum'];
+    const li=a=>a.map(x=>'<li>'+x+'</li>').join('');
+    h+='<div class="card next"><h2>Další kroky</h2><div class="cols"><div><h3>K této lokalizaci</h3><ul>'+li(tips)+'</ul></div><div><h3>Vždy</h3><ul>'+li(gen)+'</ul></div></div></div>';
+    out.innerHTML=h;
+
+    lastText='Hemofilie '+type+', '+b.name.toLowerCase()+', '+f(w,0)+' kg, výchozí hladina '+f(base,0)+' %.\n'
+      +(inhibitor?'Inhibitor: rFVIIa '+f(r.f7,1)+' mg (90 µg/kg) po 2–3 h, nebo aPCC '+iu(r.apccLo)+'–'+iu(r.apccHi)+' IU po 6–12 h (max '+iu(r.apccMax)+' IU/den).\n':'')
+      +fac+' ('+r.p.name+') úvodně '+iu(r.dose)+' IU ('+f(r.perKg,1)+' IU/kg), cílový vrchol '+f(target,0)+' %, dále cca '+iu(r.next)+' IU '+r.p.int+', '+d.iT
+      +(d.m?'; poté udržovací vrchol '+rng(d.m)+' ('+(r.mLo===r.mHi?iu(r.mLo):iu(r.mLo)+'–'+iu(r.mHi))+' IU), '+d.mT:'')+'. Kontrola hladiny faktoru po podání a před další dávkou.';
+  }
+  function setSeg(a,b,on){ $(a).setAttribute('aria-pressed',on); $(b).setAttribute('aria-pressed',!on); }
+  function setType(t){ type=t; setSeg('t-a','t-b',t==='A'); fillProds(); fillTarget(); render(); }
+  $('t-a').onclick=()=>setType('A'); $('t-b').onclick=()=>setType('B');
+  $('i-no').onclick=()=>{ inhibitor=false; setSeg('i-no','i-yes',true); render(); };
+  $('i-yes').onclick=()=>{ inhibitor=true; setSeg('i-yes','i-no',true); render(); };
+  $('bleed').innerHTML=BLEEDS.map(b=>'<option value="'+b.id+'">'+b.name+'</option>').join('');
+  $('bleed').onchange=()=>{ fillTarget(); render(); };
+  $('prod').onchange=()=>{ $('rec').value=f(PRODS[type][Number($('prod').value)].rec,1); render(); };
+  $('vial').onchange=render;
+  ['w','base','target','rec'].forEach(id=>$(id).addEventListener('input',()=>{ $('copied').textContent=''; render(); }));
+  $('form').addEventListener('submit',e=>e.preventDefault());
+  function reset(){ inhibitor=false; setSeg('i-no','i-yes',true); $('w').value='75'; $('base').value='0'; $('bleed').value='joint'; $('vial').value='250'; setType('A'); $('copied').textContent='Načten ukázkový pacient: 75 kg, těžká hemofilie A, hemartros.'; }
+  $('reset').onclick=reset;
+  $('copy').onclick=()=>{
+    const m=$('copied');
+    if(!lastText){ m.textContent='Není co kopírovat, doplň hodnoty.'; return; }
+    navigator.clipboard.writeText(lastText).then(()=>{ m.textContent='Ordinace je ve schránce.'; },()=>{ m.textContent='Kopírování se nepodařilo. Text: '+lastText; });
+  };
+  reset();
+}
+if(typeof module!=='undefined') module.exports={calc};
+</script>
+</body>
+</html>

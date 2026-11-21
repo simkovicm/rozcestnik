@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chronické srdeční selhání – ESC 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f5f9; --surface:#fff; --ink:#15233d; --muted:#5a6a85; --line:#d8deea;
+  --accent:#1d3f7a; --accent-soft:#e6ecf7;
+  --ok:#1c7a4c; --ok-soft:#e3f3ea; --warn:#9a5b00; --warn-soft:#fbefd9; --crit:#b3261e; --crit-soft:#fbe6e4;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1624; --surface:#182132; --ink:#e6ebf5; --muted:#98a6bf; --line:#2c3850;
+    --accent:#8fb0ea; --accent-soft:#22304a;
+    --ok:#63c994; --ok-soft:#173327; --warn:#e7b25a; --warn-soft:#3a2d14; --crit:#f28b82; --crit-soft:#3d1d1b;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+.wrap{max-width:1000px;margin:0 auto;padding:20px 16px 48px}
+header h1{font-size:22px;font-weight:600;margin:0 0 4px}
+header p{margin:0;color:var(--muted);font-size:14px}
+nav{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0;margin:10px 0 6px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px}
+nav a{font-size:13px;text-decoration:none;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:99px;white-space:nowrap}
+section{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;margin-top:14px;scroll-margin-top:64px}
+h2{font-size:17px;margin:0 0 10px}
+h3{font-size:15px;margin:14px 0 6px}
+p{margin:6px 0}
+ul,ol{margin:6px 0;padding-left:20px}
+li{margin:3px 0}
+.cls{display:inline-block;font-family:var(--mono);font-size:12px;font-weight:500;padding:1px 7px;border-radius:5px;margin-right:4px;white-space:nowrap}
+.c1{background:var(--ok-soft);color:var(--ok)} .c2a{background:var(--accent-soft);color:var(--accent)}
+.c2b{background:var(--warn-soft);color:var(--warn)} .c3{background:var(--crit-soft);color:var(--crit)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:700px){.grid2{grid-template-columns:1fr}}
+.box{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--bg)}
+.box h3{margin-top:0}
+.pill{display:inline-block;font-weight:600;font-size:13px;padding:3px 10px;border-radius:99px;background:var(--accent);color:var(--surface);margin:2px 4px 2px 0}
+.tw{overflow-x:auto;margin-top:8px}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:620px}
+th{text-align:left;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.d{font-family:var(--mono);font-size:13px;white-space:nowrap}
+tr.grp td{background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:13px}
+tr.hide{display:none}
+.search{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.search input{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);min-width:0;flex:1;max-width:360px}
+.note{color:var(--muted);font-size:13px}
+.alert{background:var(--warn-soft);border-radius:8px;padding:10px 12px;margin-top:8px}
+.danger{background:var(--crit-soft);border-radius:8px;padding:10px 12px;margin-top:8px}
+.flow{display:grid;gap:6px;counter-reset:s}
+.flow div{border-left:3px solid var(--accent);padding:6px 10px;background:var(--bg);border-radius:0 6px 6px 0}
+footer{margin-top:18px;color:var(--muted);font-size:12.5px}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Chronické srdeční selhání</h1>
+  <p>Rychlý přehled podle doporučení ESC 2026: léky, dávky, české přípravky, diuretika, železo</p>
+</header>
+
+<nav>
+  <a href="#klas">Klasifikace</a>
+  <a href="#fmt">Základní léčba</a>
+  <a href="#davky">Dávky</a>
+  <a href="#titrace">Titrace a K⁺</a>
+  <a href="#dalsi">Další léky</a>
+  <a href="#dhf">Dekompenzace</a>
+  <a href="#fe">Železo</a>
+  <a href="#hem">Hemato-onko</a>
+</nav>
+
+<section id="klas">
+  <h2>Klasifikace (nově od 2026)</h2>
+  <div class="grid2">
+    <div class="box"><h3>HFrEF: EF &lt; 50 %</h3>Příznaky nebo známky srdečního selhání. Kategorie HFmrEF (41–49 %) byla zrušena a patří sem.</div>
+    <div class="box"><h3>HFpEF: EF ≥ 50 %</h3>Příznaky nebo známky + objektivní strukturální či funkční abnormalita (diastolická dysfunkce, zvýšené plnicí tlaky), podpořeno zvýšenými natriuretickými peptidy.</div>
+  </div>
+  <p class="note">HF se zlepšenou EF: vzestup EF o ≥ 10 % (absolutně) a nad 40 %. Léčbu dál ponechat. „Akutní“ selhání se nově nazývá dekompenzované (DHF).</p>
+</section>
+
+<section id="fmt">
+  <h2>Základní léčba (FMT)</h2>
+  <div class="grid2">
+    <div class="box">
+      <h3>HFrEF (EF &lt; 50 %): 4 skupiny</h3>
+      <span class="pill">ACEi / ARNI (ARB)</span><span class="pill">betablokátor</span><span class="pill">MRA</span><span class="pill">SGLT2i</span>
+      <ul>
+        <li>Zahájit <b>co nejdříve a klidně současně</b>; žádné pořadí není podloženo.</li>
+        <li>Přechod z ACEi/ARB na ARNI <span class="cls c1">I B</span>; ARB jen při netoleranci ACEi i ARNI.</li>
+        <li>MRA: steroidní (spironolakton, eplerenon).</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>HFpEF (EF ≥ 50 %): 2 skupiny</h3>
+      <span class="pill">SGLT2i</span><span class="pill">MRA</span>
+      <ul>
+        <li>MRA: spironolakton nebo finerenon <span class="cls c1">I A</span>.</li>
+        <li>ACEi / ARB / ARNI zvážit <span class="cls c2b">IIb C</span>, hlavně při nižší EF nebo kvůli hypertenzi, DM, CKD.</li>
+        <li>Obezita (BMI ≥ 30, EF ≥ 45 %): semaglutid nebo tirzepatid <span class="cls c2a">IIa</span> (hmotnost, tolerance zátěže, kvalita života).</li>
+      </ul>
+    </div>
+  </div>
+  <h3>Pro všechny se symptomatickým HF bez ohledu na EF</h3>
+  <ul>
+    <li><span class="cls c1">I A</span> SGLT2i (dapagliflozin nebo empagliflozin).</li>
+    <li><span class="cls c1">I A</span> MRA.</li>
+    <li><span class="cls c1">I A</span> Kličkové diuretikum dynamicky podle volumu (nejnižší dávka k euvolémii). Thiazidy chronicky u stabilních nepoužívat.</li>
+    <li><span class="cls c1">I C</span> Titrace FMT <b>nejméně každé 1–2 týdny</b> k cílovým dávkám.</li>
+    <li><span class="cls c1">I C</span> FMT ponechat doživotně i při zlepšení příznaků či EF.</li>
+  </ul>
+</section>
+
+<section id="davky">
+  <h2>Dávkování a české přípravky</h2>
+  <div class="search"><input type="search" id="q" placeholder="Hledat lék nebo přípravek (např. Concor, finerenon)" aria-label="Hledat lék"><span class="note" id="cnt"></span></div>
+  <div class="tw"><table id="tab">
+    <thead><tr><th>Lék</th><th>Přípravky v ČR (příklady)</th><th>Úvodní dávka</th><th>Cílová dávka</th><th>Poznámka</th></tr></thead>
+    <tbody>
+      <tr class="grp"><td colspan="5">ARNI</td></tr>
+      <tr><td>sakubitril/valsartan</td><td>Entresto</td><td class="d">49/51 mg 2×</td><td class="d">97/103 mg 2×</td><td>Start 24/26 mg 2× při hypotenzi, bez předchozího ACEi, eGFR 30–60. Od ACEi odstup 36 h.</td></tr>
+      <tr class="grp"><td colspan="5">ACE inhibitory</td></tr>
+      <tr><td>enalapril</td><td>Enap, Berlipril</td><td class="d">2,5 mg 2×</td><td class="d">10–20 mg 2×</td><td></td></tr>
+      <tr><td>ramipril</td><td>Tritace, Hartil, Ramipril (generika)</td><td class="d">1,25–2,5 mg 2×</td><td class="d">5 mg 2×</td><td></td></tr>
+      <tr><td>lisinopril</td><td>generika</td><td class="d">2,5–5 mg 1×</td><td class="d">20–35 mg 1×</td><td>Optimální dávka nejistá.</td></tr>
+      <tr><td>kaptopril</td><td>Tensiomin</td><td class="d">6,25 mg 3×</td><td class="d">50 mg 3×</td><td>Cíl z poinfarktových studií.</td></tr>
+      <tr><td>trandolapril</td><td>Gopten</td><td class="d">0,5 mg 1×</td><td class="d">4 mg 1×</td><td>Cíl z poinfarktových studií.</td></tr>
+      <tr class="grp"><td colspan="5">Sartany (jen při netoleranci ACEi i ARNI)</td></tr>
+      <tr><td>kandesartan</td><td>Atacand, Carzap</td><td class="d">4 mg 1×</td><td class="d">32 mg 1×</td><td></td></tr>
+      <tr><td>losartan</td><td>Lozap, Cozaar</td><td class="d">(12,5) 25–50 mg 1×</td><td class="d">150 mg 1×</td><td></td></tr>
+      <tr><td>valsartan</td><td>Valsacor, Nortivan</td><td class="d">40 mg 2×</td><td class="d">160 mg 2×</td><td></td></tr>
+      <tr class="grp"><td colspan="5">Betablokátory</td></tr>
+      <tr><td>bisoprolol</td><td>Concor, Bisocard, Bisogamma</td><td class="d">1,25 mg 1×</td><td class="d">10 mg 1×</td><td>Kardioselektivní, vhodný u CHOPN.</td></tr>
+      <tr><td>metoprolol sukcinát (ZOK)</td><td>Betaloc ZOK, Egilok Succ</td><td class="d">12,5–25 mg 1×</td><td class="d">200 mg 1×</td><td>Jen sukcinát s řízeným uvolňováním, ne tartrát.</td></tr>
+      <tr><td>karvedilol</td><td>Dilatrend, Coryol, Talliton</td><td class="d">3,125 mg 2×</td><td class="d">25 mg 2×</td><td>Nad 85 kg až 50 mg 2×.</td></tr>
+      <tr><td>nebivolol</td><td>Nebilet, generika</td><td class="d">1,25 mg 1×</td><td class="d">10 mg 1×</td><td>Nesnížil mortalitu.</td></tr>
+      <tr class="grp"><td colspan="5">MRA</td></tr>
+      <tr><td>spironolakton</td><td>Verospiron</td><td class="d">12,5–25 mg 1×</td><td class="d">50 mg 1×</td><td>HFrEF i HFpEF. 12,5 mg při riziku K⁺ či horší ledvinné funkci. Gynekomastie.</td></tr>
+      <tr><td>eplerenon</td><td>Inspra, generika</td><td class="d">25 mg 1×</td><td class="d">50 mg 1×</td><td>HFrEF. Méně gynekomastie.</td></tr>
+      <tr><td>finerenon (nesteroidní)</td><td>Kerendia</td><td class="d">eGFR ≤ 60: 10 mg<br>eGFR &gt; 60: 20 mg</td><td class="d">eGFR ≤ 60: 20 mg<br>eGFR &gt; 60: 40 mg</td><td>Jen HFpEF (studován při EF &gt; 40 %).</td></tr>
+      <tr class="grp"><td colspan="5">SGLT2 inhibitory</td></tr>
+      <tr><td>dapagliflozin</td><td>Forxiga, generika</td><td class="d">10 mg 1×</td><td class="d">10 mg 1×</td><td rowspan="2">Bez titrace. Genitální a močové infekce. Počáteční mírný pokles eGFR je očekávaný.</td></tr>
+      <tr><td>empagliflozin</td><td>Jardiance</td><td class="d">10 mg 1×</td><td class="d">10 mg 1×</td></tr>
+      <tr class="grp"><td colspan="5">Doplňková léčba (AMT)</td></tr>
+      <tr><td>ivabradin</td><td>Procoralan, generika</td><td class="d">5 mg 2×</td><td class="d">7,5 mg 2×</td><td>Sinusový rytmus, TF &gt; 70/min, EF ≤ 35 %.</td></tr>
+      <tr><td>vericiguat</td><td>Verquvo</td><td class="d">2,5 mg 1×</td><td class="d">10 mg 1×</td><td>EF &lt; 45 % přes optimální FMT.</td></tr>
+      <tr><td>digoxin</td><td>Digoxin Léčiva</td><td class="d">62,5 µg 1×</td><td class="d">250 µg 1×</td><td>Podle hladiny, cíl &lt; 1,2 ng/ml. Vylučování ledvinami.</td></tr>
+      <tr><td>digitoxin</td><td>v ČR běžně nedostupný</td><td class="d">0,07 mg 1×</td><td class="d">0,1 mg 1×</td><td>Podle hladiny. Vylučování játry.</td></tr>
+      <tr><td>hydralazin + izosorbid-dinitrát</td><td>v ČR běžně nedostupné</td><td class="d">37,5/20 mg 3×</td><td class="d">75/40 mg 3×</td><td></td></tr>
+      <tr class="grp"><td colspan="5">Diuretika (dávka podle volumu)</td></tr>
+      <tr><td>furosemid</td><td>Furon, Furosemid (generika)</td><td class="d">20–40 mg</td><td class="d">dle volumu</td><td>i.v. maximum obvykle 600 mg/den, při těžké CKD až 1000 mg.</td></tr>
+      <tr><td>torasemid</td><td>Trifas</td><td class="d">5–10 mg</td><td class="d">dle volumu</td><td>Orientačně 10–20 mg ≈ furosemid 40 mg.</td></tr>
+      <tr><td>hydrochlorothiazid</td><td>Hydrochlorothiazid (generika)</td><td class="d" colspan="2">eGFR &gt; 50: 25 mg; 20–50: 50 mg; &lt; 20: 100 mg</td><td>Krátkodobě k sekvenční blokádě nefronu při DHF.</td></tr>
+      <tr><td>acetazolamid</td><td>Diluran (p.o.)</td><td class="d" colspan="2">500 mg i.v. 1× denně</td><td>Krátkodobě při DHF; spíše u pokročilé CKD.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Dávky jsou převzaty z ESC 2026, tab. 11. Názvy přípravků jsou orientační; dostupnost a úhradu ověřte v SÚKL nebo v číselníku VZP.</p>
+</section>
+
+<section id="titrace">
+  <h2>Titrace, ledviny, kalium</h2>
+  <ul>
+    <li>Navyšovat <b>každé 1–2 týdny</b> podle příznaků, TK, TF a laboratoře. Když cíl nejde, ponechat nejvyšší tolerovanou dávku.</li>
+    <li><b>Mírný vzestup kreatininu není důvod k vysazení.</b> Chybná interpretace ledvinné funkce je nejčastější příčinou nedostatečné léčby. Účinek FMT je u CKD stejný a absolutní přínos ještě větší.</li>
+    <li>Asymptomatická hypotenze: FMT nesnižovat, raději přehodnotit diuretikum.</li>
+    <li>Interkurentní infekce bez oběhové nestability: FMT nevysazovat.</li>
+    <li>Před zahájením betablokátoru zajistit euvolémii.</li>
+    <li>Přerušení FMT na méně než 14 dní: u stabilního pacienta lze obnovit rovnou na původních dávkách.</li>
+  </ul>
+  <div class="alert">
+    <b>Kdy dočasně snížit nebo vysadit:</b>
+    <ul>
+      <li>MRA nezahajovat při eGFR &lt; 25 ml/min nebo K⁺ ≥ 5,0 mmol/l (opatrně).</li>
+      <li>K⁺ &gt; 5,5 mmol/l: nejdřív kontrola, pak snížit nebo přerušit MRA, případně ACEi/ARNI/ARB. Po úpravě znovu nasadit.</li>
+      <li>AKI s eGFR &lt; 15: dočasně přerušit MRA, ARNI/ACEi/ARB a SGLT2i.</li>
+      <li>Těžká oběhová nestabilita: přerušit betablokátor a ARNI/ACEi/ARB.</li>
+    </ul>
+    Vazače kalia (patiromer Veltassa, cyklosilikát sodno-zirkoničitý Lokelma) mohou umožnit pokračování léčby, ale ESC je kvůli nejasnému klinickému přínosu nedoporučuje.
+  </div>
+</section>
+
+<section id="dalsi">
+  <h2>Doplňková léčba u HFrEF</h2>
+  <ul>
+    <li><span class="cls c2a">IIa B</span> <b>Ivabradin:</b> EF ≤ 35 %, sinusový rytmus, TF &gt; 70/min na maximálním betablokátoru. Při netoleranci betablokátoru <span class="cls c2a">IIa C</span>.</li>
+    <li><span class="cls c2a">IIa B</span> <b>Digoxin nebo digitoxin:</b> EF ≤ 40 % se symptomy přes optimální FMT, ke snížení hospitalizací.</li>
+    <li><span class="cls c2b">IIb B</span> <b>Vericiguat:</b> EF &lt; 45 % přes optimální FMT.</li>
+    <li><span class="cls c2b">IIb C</span> <b>Hydralazin + ISDN:</b> při netoleranci ACEi, ARNI i ARB.</li>
+    <li><b>ICD</b> zvažovat až po 3 měsících titrace FMT (a ne do 40 dnů po infarktu).</li>
+  </ul>
+  <div class="danger"><b>V těhotenství kontraindikováno</b> <span class="cls c3">III</span>: ACEi, ARB, ARNI, MRA, ivabradin, SGLT2i. Neselektivní betablokátor vyměnit za metoprolol nebo bisoprolol.</div>
+</section>
+
+<section id="dhf">
+  <h2>Dekompenzace: odvodnění</h2>
+  <div class="flow">
+    <div><b>1.</b> Furosemid i.v.: 40 mg u dosud neléčených, u chronicky léčených <b>2× denní perorální dávka</b> (při CKD vyšší). Kreatinin a ionty alespoň jednou za 24 h.</div>
+    <div><b>2.</b> Odpověď: Na⁺ v moči za 2 h ≥ 70 mmol/l <b>nebo</b> diuréza ≥ 100 ml/h za prvních 6 h.</div>
+    <div><b>3a.</b> Dostatečná odpověď: opakovat á 12 h do úplného odvodnění.</div>
+    <div><b>3b.</b> Nedostatečná odpověď: dávku zdvojnásobit, případně přidat acetazolamid 500 mg i.v. nebo HCTZ podle eGFR <span class="cls c2a">IIa B</span>.</div>
+    <div><b>4.</b> Po 24 h: při diuréze pod 3 l a trvající kongesci dále stupňovat. Při selhání maximální diuretické léčby zvážit ultrafiltraci.</div>
+  </div>
+  <p class="note">Mírný přechodný vzestup kreatininu při účinném odvodnění nezhoršuje prognózu. FMT během hospitalizace zahajovat a navyšovat; betablokátor opatrně až po stabilizaci. Při hypokalémii zvážit MRA nebo suplementaci K⁺.</p>
+</section>
+
+<section id="fe">
+  <h2>Deficit železa</h2>
+  <ul>
+    <li>Nová preferovaná definice: <b>TSAT &lt; 20 %</b>. Ve studiích se používal ferritin &lt; 100 µg/l, nebo 100–299 µg/l s TSAT &lt; 20 %.</li>
+    <li><span class="cls c1">I B</span> Železo i.v. u symptomatického HFrEF s deficitem: zlepšuje příznaky a kvalitu života.</li>
+    <li><span class="cls c2a">IIa B</span> K snížení hospitalizací; přínos je největší při TSAT &lt; 20 %.</li>
+    <li>Přípravky: karboxymaltóza železitá (<b>Ferinject</b>), derisomaltóza železitá (<b>Monofer</b>). Celkovou dávku určete podle SPC (Hb a hmotnost).</li>
+    <li>Erytropoetin k léčbě anémie u HF nepodávat (RED-HF: bez přínosu, více tromboembolií).</li>
+  </ul>
+</section>
+
+<section id="hem">
+  <h2>Hemato-onkologie</h2>
+  <ul>
+    <li><b>Kardiotoxicita onkologické léčby:</b> při symptomatickém HF FMT bez ohledu na EF. U asymptomatické středně těžké až těžké dysfunkce zahájit FMT jako u HFrEF, u lehké zvážit. Pokračování kardiotoxické léčby řeší multioborový tým (viz ESC kardioonkologie 2022).</li>
+    <li><b>Volumová zátěž</b> z infuzí a kortikoidů, myokarditida, ischemie, tromboembolie a arytmie jsou častými nepřímými příčinami HF u onkologických pacientů.</li>
+    <li><b>AL amyloidóza srdce:</b> podezření při HF se ztluštělou stěnou LK a „red flags“, zvláště nad 65 let. Rychlá diagnóza, chemoterapie nebo autologní transplantace, multioborový tým a specializované centrum.</li>
+    <li><b>ATTR amyloidóza</b> (NYHA I–III): tafamidis (Vyndaqel), akoramidis (Beyonttra) nebo vutrisiran (Amvuttra).</li>
+  </ul>
+</section>
+
+<footer>
+  Zdroj: Køber L, Adamo M, et al. 2026 ESC Guidelines for the management of heart failure. Eur Heart J 2026;47:5346–5457. <a href="https://doi.org/10.1093/eurheartj/ehag100">doi:10.1093/eurheartj/ehag100</a>. Třída I = doporučeno, IIa = zvážit, IIb = lze zvážit, III = nedoporučeno. Pomůcka k rychlé orientaci, nenahrazuje doporučení ani SPC.
+</footer>
+</div>
+<script>
+(function(){
+  const q=document.getElementById('q'), rows=[...document.querySelectorAll('#tab tbody tr')], cnt=document.getElementById('cnt');
+  const norm=s=>s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  q.addEventListener('input',()=>{
+    const t=norm(q.value.trim()); let n=0, grp=null, grpHit=false;
+    rows.forEach(r=>{
+      if(r.classList.contains('grp')){ if(grp) grp.classList.toggle('hide',!grpHit&&!!t); grp=r; grpHit=false; return; }
+      const hit=!t||norm(r.textContent).includes(t);
+      r.classList.toggle('hide',!hit); if(hit){n++; grpHit=true;}
+    });
+    if(grp) grp.classList.toggle('hide',!grpHit&&!!t);
+    cnt.textContent=t?('nalezeno: '+n):'';
+  });
+})();
+</script>
+</body>
+</html>
